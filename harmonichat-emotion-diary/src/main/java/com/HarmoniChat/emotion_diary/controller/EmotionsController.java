@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class EmotionsController {
 
     @Autowired
-    private EmotionServiceImpl emotionService;
+    private IEmotionService emotionService;
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
