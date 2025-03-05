@@ -19,9 +19,16 @@ spring:
 
 eureka:
   instance:
+    prefer-ip-address: true
     hostname: localhost
   client:
+    enabled: false
     register-with-eureka: true
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    com.netflix: DEBUG
+    org.springframework.cloud: DEBUG
