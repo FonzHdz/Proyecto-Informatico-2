@@ -7,35 +7,46 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<h1>Mi Diario de Emociones</h1>
+    <h1>Mi Diario de Emociones</h1>
 
-<form id="emotionForm">
-    <input type="hidden" id="emotionId">
-    <label for="userId">ID de Usuario:</label>
-    <input type="number" id="userId" required>
+    <form id="emotionForm">
+        <input type="hidden" id="emotionId">
+        <label for="userId">ID de Usuario:</label>
+        <input type="number" id="userId" required>
 
-    <label for="emocion">Emoción:</label>
-    <input type="text" id="emocion" required>
+        <label for="emocion">Emoción:</label>
+        <select id="emocion" required onchange="toggleCustomEmotionField()">
+            <option value="felicidad">Felicidad</option>
+            <option value="tristeza">Tristeza</option>
+            <option value="enojo">Enojo</option>
+            <option value="sorpresa">Sorpresa</option>
+            <option value="miedo">Miedo</option>
+            <option value="calma">Calma</option>
+            <option value="personalizada">Personalizada</option>
+        </select>
 
-    <label for="descripcion">Descripción:</label>
-    <textarea id="descripcion" required></textarea>
+        <div id="customEmotionField" style="display: none;">
+            <label for="customEmotion">Escribe tu emoción:</label>
+            <input type="text" id="customEmotion" maxlength="100">
+        </div>
 
-    <label for="tipo">Tipo:</label>
-    <input type="text" id="tipo" required>
+        <label for="descripcion">Descripción:</label>
+        <textarea id="descripcion" maxlength="500" required></textarea>
+        <small id="charCount">500 caracteres restantes</small>
 
-    <button type="submit">Guardar</button>
-</form>
+        <label for="media">Añadir Multimedia (Foto/Video):</label>
+        <input type="file" id="media" accept="image/*,video/*">
 
-<h2>Buscar Emoción</h2>
-<input type="text" id="searchTipo" placeholder="Escribe el tipo">
-<button onclick="searchEmotion()">Buscar</button>
-<p id="searchResult"></p>
+        <button type="submit">Guardar</button>
+    </form>
 
-<h2>Lista de Emociones</h2>
-<button onclick="loadEmotions()">Cargar Emociones</button>
-<ul id="emotionList"></ul>
+    <div id="feedbackMessage" class="feedback"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="script.js"></script>
+    <h2>Lista de Emociones</h2>
+    <button onclick="loadEmotions()">Cargar Emociones</button>
+    <div id="emotionList" class="card-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
