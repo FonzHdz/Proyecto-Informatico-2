@@ -6,9 +6,9 @@ spring:
     name: hc-emotion-diary
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/emotionsDb
+    url: jdbc:postgresql://harmonichat.c5y240664x6a.us-east-2.rds.amazonaws.com:5432/emotionsDb
     username: postgres
-    password: Pandaboo024
+    password: postgre123
   jpa:
     hibernate:
       ddl-auto: create
