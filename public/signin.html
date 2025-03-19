@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Inicio de sesión - HarmoniChat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body class="bg-gray-100">
+    <div class="flex min-h-screen">
+        <!-- Left Image Section -->
+        <div class="w-1/2 relative hidden md:block">
+            <div class="carousel">
+                <img alt="A mother and child sharing a tender moment outdoors" src="Imagenes/Imagen2.1.jpg"/>
+                <img alt="A mother and child sharing a tender moment outdoors" src="Imagenes/Imagen2.2.jpg"/>
+                <img alt="A mother and child sharing a tender moment outdoors" src="Imagenes/Imagen2.3.jpg"/>
+            </div>
+            <div class="carousel-indicators">
+                <div class="indicator" data-index="0"></div>
+                <div class="indicator" data-index="1"></div>
+                <div class="indicator" data-index="2"></div>
+            </div>
+        </div>
+        <!-- Right Form Section -->
+        <div class="w-full md:w-1/2 bg-white flex items-center justify-center p-8 relative">
+            <img alt="Background image" class="absolute inset-0 w-full h-full object-cover opacity-20" src="Imagenes/Fondo_2.jpg"/>
+            <div class="relative max-w-md w-full">
+                <div class="text-right mb-6">
+                    <h1 class="text-3xl font-bold text-[#5F3195]">HarmoniChat</h1>
+                </div>
+                <h2 class="text-2xl font-bold mb-4">Inicio de sesión</h2>
+                <p class="mb-6">Bienvenido al mejor paso para tu salud mental.</p>
+                <button class="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 rounded mb-4">
+                    <i class="fab fa-google mr-2"></i>
+                    Continuar con google
+                </button>
+                <p class="text-center mb-4">o inicia sesión con tu email</p>
+                <form>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700" for="email">Email</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#5F3195] focus:border-[#5F3195] sm:text-sm" id="email" placeholder="mail@abc.com" type="email"/>
+                    </div>
+                    <div class="mb-4 relative">
+                        <label class="block text-sm font-medium text-gray-700" for="password">Contraseña</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#5F3195] focus:border-[#5F3195] sm:text-sm" id="password" placeholder="Contraseña" type="password"/>
+                        <i class="fi fi-ss-eye-crossed absolute left-3 top-3 text-gray-500"></i>
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="flex items-center">
+                            <input class="form-checkbox text-[#5F3195]" type="checkbox"/>
+                            <span class="ml-2 text-gray-700">Recordarme</span>
+                        </label>
+                        <a class="text-[#5F3195]" href="#">Olvide mi contraseña</a>
+                    </div>
+                    <button class="w-full bg-[#5F3195] text-white py-2 rounded-md text-sm font-medium hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5F3195]" type="submit">
+                        Iniciar sesión
+                    </button>
+                </form>
+                <p class="text-center mt-4 text-sm text-gray-600">
+                    Aún no registrado?
+                    <a class="text-[#5F3195] font-medium" href="/">Crea una cuenta</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/login.js"></script>
+</body>
+</html>
