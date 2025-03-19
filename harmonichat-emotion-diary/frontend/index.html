@@ -15,25 +15,36 @@
     <input type="number" id="userId" required>
 
     <label for="emocion">Emoción:</label>
-    <input type="text" id="emocion" required>
+    <select id="emocion" required onchange="toggleCustomEmotionField()">
+        <option value="felicidad">Felicidad</option>
+        <option value="tristeza">Tristeza</option>
+        <option value="enojo">Enojo</option>
+        <option value="sorpresa">Sorpresa</option>
+        <option value="miedo">Miedo</option>
+        <option value="calma">Calma</option>
+        <option value="personalizada">Personalizada</option>
+    </select>
+
+    <div id="customEmotionField" style="display: none;">
+        <label for="customEmotion">Escribe tu emoción:</label>
+        <input type="text" id="customEmotion" maxlength="100">
+    </div>
 
     <label for="descripcion">Descripción:</label>
-    <textarea id="descripcion" required></textarea>
+    <textarea id="descripcion" maxlength="500" required></textarea>
+    <small id="charCount">500 caracteres restantes</small>
 
-    <label for="tipo">Tipo:</label>
-    <input type="text" id="tipo" required>
+    <label for="media">Añadir Multimedia (Foto/Video):</label>
+    <input type="file" id="media" accept="image/,video/">
 
     <button type="submit">Guardar</button>
 </form>
 
-<h2>Buscar Emoción</h2>
-<input type="text" id="searchTipo" placeholder="Escribe el tipo">
-<button onclick="searchEmotion()">Buscar</button>
-<p id="searchResult"></p>
+<div id="feedbackMessage" class="feedback"></div>
 
 <h2>Lista de Emociones</h2>
 <button onclick="loadEmotions()">Cargar Emociones</button>
-<ul id="emotionList"></ul>
+<div id="emotionList" class="card-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="script.js"></script>
