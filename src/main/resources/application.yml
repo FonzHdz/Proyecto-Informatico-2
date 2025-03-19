@@ -1,0 +1,23 @@
+server:
+  port: 8070
+
+application:
+  security:
+    jwt:
+      secret-key: McvbIKwPaVjhmKBwFUdHDXzvFWEAZgaJ8XJr6cBsvNKPI9VUAW7GzFMV6ZhHsI
+      expiration: 86400000  # 1 día
+spring:
+  application:
+    name: app_hc
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://harmonichat.c5y240664x6a.us-east-2.rds.amazonaws.com:5432/app_hc
+    username: postgres
+    password: postgre123
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
