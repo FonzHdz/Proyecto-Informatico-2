@@ -59,7 +59,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final Optional<User> user = userService.findByEmail(userDetails.getUsername());
 
         if (user.isEmpty() || !jwtService.isTokenValid(jwtToken, user.get())) {
-            filterChain.doFilter(request, response); // 🔥 Esto evita bloquear la respuesta JSON
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Invalid Token\"}");
             return;
         }
 
