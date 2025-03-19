@@ -1,8 +1,6 @@
-package com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary;
+package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -10,14 +8,16 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
 @Getter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "emotions")
-public class Emotion {
+@Table(name = "posts")
+public class Post {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,8 +31,8 @@ public class Emotion {
 
     @Getter
     @Setter
-    @Column(name = "name")
-    private String name;
+    @Column(name = "family_id")
+    private UUID familyId;
 
     @Getter
     @Setter
