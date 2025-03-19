@@ -1,0 +1,34 @@
+.carousel {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.carousel img {
+    min-width: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.carousel-indicators div {
+    width: 10px;
+    height: 10px;
+    background-color: gray;
+    border-radius: 50%;
+    margin: 0 5px;
+    transition: background-color 0.3s;
+}
+
+.carousel-indicators .active {
+    background-color: #5F3195;
+}
