@@ -1,6 +1,5 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,4 +17,10 @@ public class EmotionService {
     public List<Emotion> findAllByUserId(UUID userId){
         return emotionRepository.findAllByUserId(userId);
     }
+
+    public void createNew(Emotion emotion){
+        emotionRepository.save(emotion);
+    }
+
+
 }
