@@ -1,4 +1,3 @@
-
 CREATE TABLE emotions (
                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                           user_id UUID NOT NULL,
@@ -16,10 +15,10 @@ CREATE INDEX idx_emotions_user_id ON emotions(user_id);
 
 -- Función para actualizar last_modified_date automáticamente
 CREATE OR REPLACE FUNCTION update_last_modified_date_emotions()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.last_modified_date = CURRENT_TIMESTAMP;
-RETURN NEW;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -27,4 +26,4 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER set_last_modified_date_emotions
     BEFORE UPDATE ON emotions
     FOR EACH ROW
-    EXECUTE FUNCTION update_last_modified_date_emotions();
+EXECUTE FUNCTION update_last_modified_date_emotions();
