@@ -9,5 +9,5 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<Post,UUID> {
 
     Optional<List<Post>> findAllByFamilyId(UUID familyId);
-    Optional<List<Post>> findAllById(UUID id);
+    Optional<List<Post>> findAllByUserId(UUID userId);
 }
