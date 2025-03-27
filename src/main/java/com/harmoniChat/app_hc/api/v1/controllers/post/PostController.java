@@ -20,17 +20,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
-    private final UserRepository userRepository;
 
     @PostMapping("/create/{userId}/{familyId}")
     public ResponseEntity<Post> create(@PathVariable UUID userId, @PathVariable UUID familyId, @RequestBody final PostRequest request){
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        // Buscar el ID del usuario autenticado en la base de datos
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         Post newPost = Post.builder()
                 .userId(userId)
                 .familyId(familyId)
