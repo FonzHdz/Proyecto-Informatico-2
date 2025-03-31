@@ -1,4 +1,4 @@
-package com.harmoniChat.app_hc.entities_repositories_and_services.post;
+package com.harmoniChat.app_hc.entities_repositories_and_services.reaction;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,17 +7,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-
 @Getter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "posts")
-public class Post {
-
+@Table(name = "reactions")
+public class Reaction {
     @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,18 +28,13 @@ public class Post {
 
     @Getter
     @Setter
-    @Column(name = "family_id")
-    private UUID familyId;
+    @Column(name = "post_id")
+    private UUID postId;
 
     @Getter
     @Setter
-    @Column(name = "description")
-    private String description;
-
-    @Getter
-    @Setter
-    @Column(name = "files_url")
-    private String filesURL;
+    @Column(name = "content")
+    private String content;
 
     @CreationTimestamp
     @Getter
