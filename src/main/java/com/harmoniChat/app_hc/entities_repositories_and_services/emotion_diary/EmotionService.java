@@ -8,19 +8,17 @@ import java.util.UUID;
 
 @Service
 public class EmotionService {
-    private final EmotionRepository emotionRepository;
-
-    @Autowired
-    public EmotionService(EmotionRepository emotionRepository) {
-        this.emotionRepository = emotionRepository;
-    }
-    public List<Emotion> findAllByUserId(UUID userId){
-        return emotionRepository.findAllByUserId(userId);
-    }
-
-    public void createNew(Emotion emotion){
-        emotionRepository.save(emotion);
-    }
-
-
+//    private final EmotionRepository emotionRepository;
+//
+//    @Autowired
+//    public EmotionService(EmotionRepository emotionRepository) {
+//        this.emotionRepository = emotionRepository;
+//    }
+//    public List<Emotion> findAllByUserId(UUID userId){
+//        return emotionRepository.findAllByUserId(userId);
+//    }
+//
+//    public void createNew(Emotion emotion){
+//        emotionRepository.save(emotion);
+//    }
 }

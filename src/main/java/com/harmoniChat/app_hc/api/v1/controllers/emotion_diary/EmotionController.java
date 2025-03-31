@@ -24,20 +24,20 @@ public class EmotionController {
         this.emotionService = emotionService;
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Emotion>> getAllEmotions(@PathVariable UUID userId){
-        List<Emotion> emotions = emotionService.findAllByUserId(userId);
-        return ResponseEntity.ok(emotions);
-    }
-
-    public ResponseEntity<Emotion> createEmotion(@PathVariable UUID userId, @RequestBody final EmotionRequest request){
-        Emotion newEmotion = Emotion.builder()
-                .userId(userId)
-                .name(request.name())
-                .description(request.description())
-                .filesURL(request.filesURL())
-                .build();
-        emotionService.createNew(newEmotion);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newEmotion);
-    }
+//    @GetMapping("/user/{userId}")
+//    public ResponseEntity<List<Emotion>> getAllEmotions(@PathVariable UUID userId){
+//        List<Emotion> emotions = emotionService.findAllByUserId(userId);
+//        return ResponseEntity.ok(emotions);
+//    }
+//
+//    public ResponseEntity<Emotion> createEmotion(@PathVariable UUID userId, @RequestBody final EmotionRequest request){
+//        Emotion newEmotion = Emotion.builder()
+//                .userId(userId)
+//                .name(request.name())
+//                .description(request.description())
+//                .filesURL(request.filesURL())
+//                .build();
+//        emotionService.createNew(newEmotion);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(newEmotion);
+//    }
 }

@@ -1,5 +1,6 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,7 +9,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +24,7 @@ import static org.mockito.Mockito.*;
 class PostServiceTest {
     @Mock
     private PostRepository postRepository;
+    private BlobStorageService azureBlobStorageService;
 
     @InjectMocks
     private PostService postService;
@@ -62,18 +66,21 @@ class PostServiceTest {
     }
 
     @Test
-    void createNew() {
+    void createNew() throws IOException {
 
-        Post newPost = new Post();
-        newPost.setId(UUID.randomUUID());
-        newPost.setUserId(UUID.randomUUID());
-        newPost.setFamilyId(UUID.randomUUID());
-        newPost.setDescription("Nuevo post de prueba");
-        newPost.setFilesURL("http://example.com/newfile.jpg");
-        newPost.setCreationDate(LocalDateTime.now());
-        newPost.setLastModifiedDate(LocalDateTime.now());
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getOriginalFilename()).thenReturn("test-image.jpg");
+        when(azureBlobStorageService.uploadFile(file)).thenReturn("http://example.com/uploaded-image.jpg");
 
-        postService.createNew(newPost);
+        Post newPost = Post.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .familyId(UUID.randomUUID())
+                .description("Nuevo post de prueba")
+                .build();
+
+        postService.createNew(newPost, file);
 
         verify(postRepository, times(1)).save(newPost);
     }
