@@ -20,8 +20,8 @@ public class PostService {
         return postRepository.findAllByFamilyId(familyId);
     }
 
-    public Optional<List<Post>> getAllPostById (UUID id){
-        return postRepository.findAllById(id);
+    public Optional<List<Post>> getAllPostById (UUID userId){
+        return postRepository.findAllByUserId(userId);
     }
 
 
