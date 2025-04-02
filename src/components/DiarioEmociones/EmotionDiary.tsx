@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreateEmotion from './CreateEmotion';
+import axios from 'axios';
+
+import { wait } from '@testing-library/user-event/dist/utils';
 
 const EmotionContainer = styled.div`
   width: 100%;
@@ -139,31 +142,40 @@ const getEmotionIcon = (emotion: string) => {
   }
 };
 
+interface EmotionEntry {
+  id: number;
+  emotion: string;
+  date: string;
+  image: string;
+  description: string;
+}
+
 const EmotionDiary: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [emotions] = useState([
-    {
-      id: 1,
-      emotion: 'Tristeza',
-      date: '14/02/2025 10:20 AM',
-      image: '/Helado.jpeg',
-      description: 'Hoy vi este helado tirado en el piso y me dió mucha tristeza porque yo quería uno pero no tenía dinero.'
-    },
-    {
-      id: 2,
-      emotion: 'Alegria',
-      date: '15/02/2025 11:30 AM',
-      image: '/Casados.jpeg',
-      description: 'Hoy mis tios se casaron y estoy muy feliz porque yo espero poder casarme también algún día.'
-    },
-    {
-      id: 3,
-      emotion: 'Calma',
-      date: '15/02/2025 5:40 PM',
-      image: '/Paisaje.jpg',
-      description: 'Hoy estaba de viaje y me encontré con este bello lugar lleno de mucha calma.'
+  const [emotions, setEmotions] = useState<EmotionEntry[]>([]);
+// Cargar datos desde la API
+useEffect(() => {
+  const fetchEmotions = async () => {
+    try {
+      const response = await axios.get('http://localhost:8070/emotion/all');
+      
+      // Transformamos los datos a la estructura esperada
+      const formattedEmotions = response.data.map((item: any) => ({
+        id: item.id,
+        emotion: item.emocion, // Ajustar clave si es diferente
+        date: item.date,
+        image: item.fileUrl, // Ajustar clave si es diferente
+        description: item.description
+      }));
+
+      setEmotions(formattedEmotions);
+    } catch (error) {
+      console.error('Error al obtener las emociones:', error);
     }
-  ]);
+  };
+
+  fetchEmotions();
+}, []);
 
   const handleCreateEmotion = (emotion: any) => {
     console.log('Nueva emoción:', emotion);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
 
 interface CreateEmotionProps {
   isOpen: boolean;
@@ -145,10 +146,13 @@ const emotions = [
 ];
 
 const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit }) => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,18 +166,52 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      emotion: selectedEmotion,
-      description,
-      image
-    });
-    setSelectedEmotion('');
-    setDescription('');
-    setImage(null);
-    setImagePreview('');
+    
+    if (!selectedEmotion || !description) {
+      setError('Por favor selecciona una emoción y escribe una descripción');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Encontramos la emoción seleccionada para obtener su label
+      const emotionObj = emotions.find(e => e.id === selectedEmotion);
+      const emotionLabel = emotionObj?.label || selectedEmotion;
+
+      // Datos que se enviarán en el body de la solicitud
+      const requestBody = {
+        name: emotionLabel,          // Nombre completo de la emoción
+        description: description,    // Descripción del usuario
+      };
+
+      const response = await axios.post('http://localhost:8070/emotion/new', requestBody, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Emoción creada:', response.data);
+      
+      // Limpiamos el formulario
+      setSelectedEmotion('');
+      setDescription('');
+      setImage(null);
+      setImagePreview('');
+      setIsCreateOpen(false);
+
+    } catch (err) {
+      setError('Error al crear la emoción. Por favor intenta nuevamente.');
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   if (!isOpen) return null;
 
