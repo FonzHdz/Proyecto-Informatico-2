@@ -24,18 +24,26 @@ public class Family {
 
     @Getter
     @Setter
-    @Column(name = "name")
-    private String name;
+    @Column(name = "name", nullable = false)
+    @Builder.Default
+    private String name = "Nueva Familia";
 
     @Getter
     @Setter
-    @Column(name = "photo_url")
-    private String photoURL;
+    @Column(name = "photo_url", nullable = false)
+    @Builder.Default
+    private String photoURL = "default-family.jpg";
 
     @Getter
     @Setter
-    @Column(name = "motto")
-    private String motto;
+    @Column(name = "motto", nullable = false)
+    @Builder.Default
+    private String motto = "Familia unida";
+
+    @Getter
+    @Setter
+    @Column(name = "invite_code", nullable = false, unique = true)
+    private String inviteCode;
 
     @CreationTimestamp
     @Getter

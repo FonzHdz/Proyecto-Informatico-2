@@ -1,8 +1,9 @@
 CREATE TABLE families (
                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                          name VARCHAR(255) NOT NULL,
-                          photo_url VARCHAR(255),
-                          motto VARCHAR(255),
+                          name VARCHAR(255) NOT NULL DEFAULT 'Nueva Familia',
+                          photo_url VARCHAR(255) NOT NULL DEFAULT 'default-family.jpg',
+                          motto VARCHAR(255) NOT NULL DEFAULT 'Familia unida',
+                          invite_code VARCHAR(255) NOT NULL UNIQUE,
                           creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

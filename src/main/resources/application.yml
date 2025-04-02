@@ -21,6 +21,9 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    repair-on-migrate: true
+    validate-on-migrate: false
+    out-of-order: true
   azure:
     storage:
       connection-string: "DefaultEndpointsProtocol=https;AccountName=harmonichat;AccountKey=EhRSPUxrdIol/BcdnkZifwDzTSb8JIwdSLpe7i04fh83qGRJnJ1oMWYsG+tWmPQgii1VVQ7qh+nn+AStWzLwYQ==;EndpointSuffix=core.windows.net"
@@ -33,3 +36,13 @@ spring:
       enabled: true
       max-file-size: 1000MB
       max-request-size: 1000MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: "harmonichat025@gmail.com"
+    password: "dypa sexx gsio xyxu"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true

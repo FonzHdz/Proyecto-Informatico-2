@@ -1,6 +1,7 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.user;
 
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.family.Family;
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -26,8 +27,9 @@ public class User {
 
     @Getter
     @Setter
-    @Column(name = "family_id")
-    private UUID familyId;
+    @ManyToOne
+    @JoinColumn(name = "family_id")
+    private Family familyId;
 
     @Getter
     @Setter
