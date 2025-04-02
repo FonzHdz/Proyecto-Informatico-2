@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Ruta principal
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'signin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // Ruta para la página de inicio de sesión
