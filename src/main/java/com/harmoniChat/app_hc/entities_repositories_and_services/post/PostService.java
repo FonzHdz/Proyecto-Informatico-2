@@ -1,5 +1,6 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ public class PostService {
 
     public void createNew(Post post, MultipartFile file) throws IOException {
         if (file != null && !file.isEmpty()) {
-            String fileUrl = blobStorageService.uploadFile(file);
+            String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.POSTS);
             post.setFilesURL(fileUrl);
         }
         postRepository.save(post);
@@ -30,9 +31,6 @@ public class PostService {
     }
 
     public Optional<List<Post>> getAllPostById (UUID userId){
-        return postRepository.findAllByUserId(userId);
-    }
-
-
+        return postRepository.findAllByUserId(userId);}
 
 }

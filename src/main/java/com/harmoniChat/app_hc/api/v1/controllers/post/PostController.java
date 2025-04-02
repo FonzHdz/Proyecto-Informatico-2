@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,20 +24,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("/create/{userId}/{familyId}")
-    public ResponseEntity<Post> create(@PathVariable UUID userId, @PathVariable UUID familyId, @RequestPart("post") String postJson, @RequestPart("file") MultipartFile file) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        PostRequest request = objectMapper.readValue(postJson, PostRequest.class);
+    public ResponseEntity<?> createPost(
+            @PathVariable UUID userId,
+            @PathVariable UUID familyId,
+            @RequestPart("post") String postJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        Post newPost = Post.builder()
-                .userId(userId)
-                .familyId(familyId)
-                .description(request.description())
-                .filesURL(request.filesURL())
-                .build();
-        postService.createNew(newPost, file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newPost);
+        try {
+            PostRequest request = objectMapper.readValue(postJson, PostRequest.class);
+
+            Post newPost = Post.builder()
+                    .userId(userId)
+                    .familyId(familyId)
+                    .description(request.description())
+                    .filesURL(request.filesURL())
+                    .build();
+
+            postService.createNew(newPost, file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newPost);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Error al procesar la solicitud",
+                            "details", e.getMessage()
+                    ));
+        }
     }
 
     @GetMapping("/family/{familyId}")

@@ -90,6 +90,31 @@ public class UserController {
         return ResponseEntity.ok(Map.of("exists", exists));
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
+        try {
+            Optional<User> userOptional = userService.findByEmail(loginRequest.getEmail());
+
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Usuario no encontrado");
+            }
+
+            User user = userOptional.get();
+
+            if (!user.getPassword().equals(loginRequest.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Contraseña incorrecta");
+            }
+            user.setPassword(null);
+            return ResponseEntity.ok(user);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error durante el inicio de sesión: " + e.getMessage());
+        }
+    }
+
     // Endpoint original para creación directa (mantenido por compatibilidad)
     @PostMapping("/create")
     public ResponseEntity<User> createUser(@RequestBody User user) {
@@ -132,5 +157,11 @@ public class UserController {
         private User user;
         private String message;
         private String familyCode;
+    }
+
+    @Data
+    public static class LoginRequest {
+        private String email;
+        private String password;
     }
 }
