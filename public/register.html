@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Registro - HarmoniChat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles/registro.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="flex min-h-screen">
+        <!-- Left Image Section -->
+        <div class="w-1/2 relative hidden md:block">
+            <div class="carousel">
+                <img alt="Familia feliz" src="Imagenes/Imagen1.jpg"/>
+                <img alt="Familia unida" src="Imagenes/Imagen2.jpg"/>
+                <img alt="Familia disfrutando" src="Imagenes/Imagen3.jpg"/>
+            </div>
+            <div class="carousel-indicators">
+                <div class="indicator" data-index="0"></div>
+                <div class="indicator" data-index="1"></div>
+                <div class="indicator" data-index="2"></div>
+            </div>
+        </div>
+        
+        <!-- Right Form Section -->
+        <div class="w-full md:w-1/2 bg-white flex items-center justify-center p-8 relative">
+            <img alt="Background image" class="absolute inset-0 w-full h-full object-cover opacity-20" src="Imagenes/Fondo_2.jpg"/>
+            <div class="relative max-w-md w-full">
+                <div class="text-right mb-6">
+                    <h1 class="text-3xl font-bold text-[#5F3195]">HarmoniChat</h1>
+                </div>
+                <h2 class="text-2xl font-bold mb-4">Registro</h2>
+                <p class="mb-6">Bienvenido al mejor paso para tu salud mental.</p>
+                
+                <form id="registroForm">
+                    <!-- Información Personal -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="firstName" required type="text"/>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Apellido</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="lastName" required type="text"/>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Género</label>
+                        <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                                id="gender" required>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Documentación -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                        <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                                id="documentType" required>
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="TI">Tarjeta de Identidad</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Número de Documento</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="documentNumber" required type="text"/>
+                    </div>
+                    
+                    <!-- Contacto -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="phoneNumber" required type="tel"/>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="email" required type="email"/>
+                    </div>
+                    
+                    <!-- Rol y Familia -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Rol en la Familia</label>
+                        <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                                id="role" required>
+                            <option value="">Selecciona tu rol</option>
+                        </select>
+                    </div>
+                    
+                    <div id="familyCodeField" class="mb-4 hidden">
+                        <label class="block text-sm font-medium text-gray-700">Código de Familia</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" 
+                               id="familyCode" type="text"/>
+                        <p id="familyCodeHelp" class="text-xs text-gray-500 mt-1">Pide el código al padre/madre de tu familia</p>
+                    </div>
+                    
+                    <!-- Contraseñas -->
+                    <div class="mb-4 relative">
+                        <label class="block text-sm font-medium text-gray-700">Contraseña</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="password" required type="password"/>
+                    </div>
+                    
+                    <div class="mb-6 relative">
+                        <label class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                               id="confirmPassword" required type="password"/>
+                    </div>
+                    
+                    <!-- Sección de invitación (aparece después del registro) -->
+                    <div id="invitationSection" class="hidden mb-6 p-4 bg-purple-50 rounded-lg">
+                        <h3 class="font-bold text-[#5F3195] mb-2">¡Registro exitoso!</h3>
+                        <p class="text-sm mb-2">Hemos enviado el código de invitación a tu correo electrónico.</p>
+                        <div class="flex items-center">
+                            <input id="invitationCode" class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md" 
+                                   type="text" readonly/>
+                            <button type="button" onclick="copyInvitationCode()" 
+                                    class="bg-[#5F3195] text-white px-4 py-2 rounded-r-md">
+                                Copiar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón de registro -->
+                    <div class="mb-4">
+                        <button type="button" onclick="registrarUsuario()" 
+                                class="w-full bg-[#5F3195] text-white py-2 rounded-md hover:bg-purple-800">
+                            Registrarse
+                        </button>
+                    </div>
+                    
+                    <p class="text-center text-sm text-gray-600">
+                        ¿Ya tienes cuenta? 
+                        <a class="text-[#5F3195] font-medium" href="/login">Inicia sesión</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="scripts/registro.js"></script>
+</body>
+</html>
