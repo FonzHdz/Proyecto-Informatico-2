@@ -27,10 +27,12 @@ spring:
   azure:
     storage:
       connection-string: "DefaultEndpointsProtocol=https;AccountName=harmonichat;AccountKey=EhRSPUxrdIol/BcdnkZifwDzTSb8JIwdSLpe7i04fh83qGRJnJ1oMWYsG+tWmPQgii1VVQ7qh+nn+AStWzLwYQ==;EndpointSuffix=core.windows.net"
-      token-sas: "sp=racwdli&st=2025-03-31T05:29:38Z&se=2025-08-01T13:29:38Z&sv=2024-11-04&sr=c&sig=vCphMM8wafsgdiTztT7VV17k1zIIRilNu262q5UX2AU%3D"
       containers:
         emotions_diary: "emotions"
         posts: "posts"
+      tokens:
+        emotions: "sp=racwdli&st=2025-04-02T21:00:30Z&se=2025-12-04T05:00:30Z&sv=2024-11-04&sr=c&sig=uUtzG5ISis14LlMW5CSk5D2KP%2F6INHbS%2Bai6pt2woSs%3D"
+        posts: "sp=racwdli&st=2025-04-02T21:45:05Z&se=2025-12-02T05:45:05Z&sv=2024-11-04&sr=c&sig=SydTXcIYLS3o%2FFQoHiBJlfLEQQ9ifcMEj39B5gUDOlc%3D"
   servlet:
     multipart:
       enabled: true

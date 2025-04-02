@@ -5,39 +5,135 @@ import com.azure.storage.blob.BlobClientBuilder;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobHttpHeaders;
+import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.options.BlobParallelUploadOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class BlobStorageService {
-
-    @Value("${spring.azure.storage.connection-string}")
-    private String connectionString;
-
-    @Value("${spring.azure.storage.token-sas}")
-    private String tokenSAS;
+    private final BlobServiceClient blobServiceClient;
 
     @Value("${spring.azure.storage.containers.posts}")
-    private String containerName;
+    private String postsContainer;
 
-    public String uploadFile(MultipartFile file) throws IOException {
-        String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-        String fileUrl = "https://harmonichat.blob.core.windows.net/posts/" + fileName + "?" + tokenSAS;
+    @Value("${spring.azure.storage.containers.emotions_diary}")
+    private String emotionsContainer;
 
-        BlobServiceClient serviceClient = new BlobServiceClientBuilder()
-                .connectionString(connectionString) // Asegurar que no sea null
-                .buildClient();
-        BlobContainerClient containerClient = serviceClient.getBlobContainerClient(containerName);
+    @Value("${spring.azure.storage.tokens.posts}")
+    private String postsToken;
 
-        BlobClient blobClient = containerClient.getBlobClient(fileName);
-        blobClient.upload(file.getInputStream(), file.getSize(), true);
+    @Value("${spring.azure.storage.tokens.emotions}")
+    private String emotionsToken;
 
-        return fileUrl;
+    public String uploadFile(MultipartFile file, BlobContainerType containerType) throws IOException {
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("El archivo no puede estar vacío");
+            }
+
+            String containerName = getContainerName(containerType);
+            String sasToken = getSasToken(containerType);
+            String fileName = generateValidFileName(file.getOriginalFilename());
+
+            BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+            if (!containerClient.exists()) {
+                containerClient.create();
+            }
+
+            String contentType = determineContentType(file);
+
+            BlobHttpHeaders headers = new BlobHttpHeaders()
+                    .setContentType(contentType);
+
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+            blobClient.uploadWithResponse(
+                    new BlobParallelUploadOptions(file.getInputStream())
+                            .setHeaders(headers),
+                    null,
+                    null);
+
+            return buildFileUrl(containerName, fileName, sasToken);
+
+        } catch (BlobStorageException e) {
+            throw new IOException("Error al subir archivo: " + e.getServiceMessage(), e);
+        }
+    }
+
+    private String determineContentType(MultipartFile file) {
+        String contentType = file.getContentType();
+
+        if (contentType == null || contentType.equals("application/octet-stream")) {
+            String fileName = file.getOriginalFilename();
+            if (fileName != null) {
+                if (fileName.endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+                    contentType = "image/jpeg";
+                } else if (fileName.endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (fileName.endsWith(".pdf")) {
+                    contentType = "application/pdf";
+                }
+                // Agregar más tipos según necesidad
+            }
+        }
+
+        return contentType != null ? contentType : "application/octet-stream";
+    }
+
+    private String generateValidFileName(String originalName) {
+        String safeName = originalName != null ?
+                originalName.replaceAll("[^a-zA-Z0-9.-]", "_") :
+                "file";
+
+        int maxLength = 1024 - 37;
+        if (safeName.length() > maxLength) {
+            safeName = safeName.substring(0, maxLength);
+        }
+
+        return UUID.randomUUID() + "-" + safeName;
+    }
+
+    private String getContainerName(BlobContainerType type) {
+        return type == BlobContainerType.POSTS ? postsContainer : emotionsContainer;
+    }
+
+    private String getSasToken(BlobContainerType type) {
+        return type == BlobContainerType.POSTS ? postsToken : emotionsToken;
+    }
+
+    private String generateUniqueFileName(String originalName) {
+        return UUID.randomUUID() + "-" + originalName;
+    }
+
+    private String buildFileUrl(String container, String fileName, String token) {
+        // Extraer solo el nombre de la cuenta de la cadena de conexión
+        String accountName = blobServiceClient.getAccountName();
+
+        // Construir URL correctamente
+        return String.format("https://%s.blob.core.windows.net/%s/%s%s",
+                accountName,
+                container,
+                fileName,
+                token != null ? "?" + token : "");
+    }
+
+    private void uploadToBlobStorage(String containerName, String fileName, MultipartFile file) throws IOException {
+        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+        if (!containerClient.exists()) {
+            containerClient.create();
+        }
+        containerClient.getBlobClient(fileName)
+                .upload(file.getInputStream(), file.getSize(), true);
     }
 }
