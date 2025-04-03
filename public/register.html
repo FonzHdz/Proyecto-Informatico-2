@@ -97,6 +97,15 @@
                             <option value="">Selecciona tu rol</option>
                         </select>
                     </div>
+
+                    <!-- Checkbox para código de invitación -->
+                    <div class="mb-4">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="hasInviteCode" class="rounded border-gray-300 text-[#5F3195] focus:ring-[#5F3195]" 
+                                   onchange="toggleInviteCodeField()">
+                            <span class="ml-2 text-sm text-gray-700">¿Tienes un código de invitación?</span>
+                        </label>
+                    </div>
                     
                     <div id="familyCodeField" class="mb-4 hidden">
                         <label class="block text-sm font-medium text-gray-700">Código de Familia</label>
