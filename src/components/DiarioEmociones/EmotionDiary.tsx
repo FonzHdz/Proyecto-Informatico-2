@@ -64,7 +64,7 @@ const EmotionDate = styled.span`
 const EmotionImage = styled.img`
   width: 100%;
   height: 200px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 4px;
 `;
 

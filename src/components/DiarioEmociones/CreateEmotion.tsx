@@ -174,36 +174,46 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       setError('Por favor selecciona una emoción y escribe una descripción');
       return;
     }
-
+  
     setIsLoading(true);
     setError('');
-
+  
     try {
-      // Encontramos la emoción seleccionada para obtener su label
       const emotionObj = emotions.find(e => e.id === selectedEmotion);
       const emotionLabel = emotionObj?.label || selectedEmotion;
-
-      // Datos que se enviarán en el body de la solicitud
-      const requestBody = {
-        name: emotionLabel,          // Nombre completo de la emoción
-        description: description,    // Descripción del usuario
-      };
-
-      const response = await axios.post('http://localhost:8070/emotion/new', requestBody, {
+  
+      // Crear FormData en lugar de JSON
+      const formData = new FormData();
+      formData.append('emotion', JSON.stringify({
+        name: emotionLabel,
+        description: description
+      }));
+      
+      // Agregar la imagen si existe
+      if (image) {
+        formData.append('file', image);
+      }
+  
+      const response = await axios.post('http://localhost:8070/emotion/new', formData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'multipart/form-data'
         }
       });
-
+  
       console.log('Emoción creada:', response.data);
       
-      // Limpiamos el formulario
+      // Limpiar formulario
       setSelectedEmotion('');
       setDescription('');
       setImage(null);
       setImagePreview('');
       setIsCreateOpen(false);
-
+  
+      // Opcional: llamar a onSubmit para actualizar la lista
+      if (onSubmit) {
+        onSubmit(response.data);
+      }
+  
     } catch (err) {
       setError('Error al crear la emoción. Por favor intenta nuevamente.');
       console.error('Error:', err);
