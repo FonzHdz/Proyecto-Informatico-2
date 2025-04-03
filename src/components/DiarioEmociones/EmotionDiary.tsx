@@ -167,6 +167,7 @@ useEffect(() => {
         image: item.fileUrl, // Ajustar clave si es diferente
         description: item.description
       }));
+      
 
       setEmotions(formattedEmotions);
     } catch (error) {
@@ -180,6 +181,21 @@ useEffect(() => {
   const handleCreateEmotion = (emotion: any) => {
     console.log('Nueva emoción:', emotion);
     setIsCreateOpen(false);
+  };
+
+  const handleDeleteEmotion = async (id: number) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta emoción?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`http://localhost:8070/emotion/delete/${id}`);
+      
+      // Actualizar el estado local eliminando la emoción
+      setEmotions(prev => prev.filter(emotion => emotion.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar la emoción:', error);
+    }
   };
 
   return (
@@ -199,7 +215,7 @@ useEffect(() => {
             <ActionButton>
               <i className="fi fi-rr-edit"></i>
             </ActionButton>
-            <ActionButton>
+            <ActionButton onClick={() => handleDeleteEmotion(entry.id)}>
               <i className="fi fi-rr-trash"></i>
             </ActionButton>
           </ActionButtons>

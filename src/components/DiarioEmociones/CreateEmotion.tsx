@@ -208,11 +208,16 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       setImage(null);
       setImagePreview('');
       setIsCreateOpen(false);
+      
   
       // Opcional: llamar a onSubmit para actualizar la lista
       if (onSubmit) {
         onSubmit(response.data);
       }
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
   
     } catch (err) {
       setError('Error al crear la emoción. Por favor intenta nuevamente.');
@@ -221,7 +226,6 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       setIsLoading(false);
     }
   };
-
 
   if (!isOpen) return null;
 
