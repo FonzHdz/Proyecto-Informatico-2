@@ -221,12 +221,15 @@ function App() {
           </SidebarIcon>
         </MainIconsContainer>
         <ProfileIconContainer>
-          <SidebarIcon 
-            active={activeSection === 'profile'} 
-            onClick={() => handleSectionChange('profile')}
-          >
-            <i className="fi fi-rr-user"></i>
-          </SidebarIcon>
+        <SidebarIcon 
+          active={activeSection === 'profile'} 
+          onClick={() => {
+            handleSectionChange('profile');
+            window.location.href = 'http://localhost:3000'; // Redirección completa
+          }}
+        >
+          <i className="fi fi-rr-user"></i>
+        </SidebarIcon>
         </ProfileIconContainer>
       </Sidebar>
 

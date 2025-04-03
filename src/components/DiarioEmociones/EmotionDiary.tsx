@@ -64,7 +64,7 @@ const EmotionDate = styled.span`
 const EmotionImage = styled.img`
   width: 100%;
   height: 200px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 4px;
 `;
 
@@ -133,7 +133,7 @@ const getEmotionIcon = (emotion: string) => {
   switch (emotion.toLowerCase()) {
     case 'tristeza':
       return '☹️';
-    case 'alegria':
+    case 'alegría':
       return '☺️';
     case 'calma':
       return '😌';
