@@ -1,14 +1,11 @@
 package com.harmoniChat.app_hc.api.v1.controllers.emotion_diary;
 
-import com.harmoniChat.app_hc.api.v1.controllers.post.PostRequest;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
 import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.Emotion;
 import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.EmotionService;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -113,6 +110,31 @@ public class EmotionController {
             );
 
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteEmotion(@PathVariable UUID id) {
+        try {
+            // Verificar si la emoción existe
+            boolean exists = emotionService.existsById(id);
+
+            if (!exists) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Eliminar el archivo asociado del blob storage si existe
+            Emotion emotion = emotionService.findById(id).orElse(null);
+            if (emotion != null && emotion.getFilesURL() != null) {
+                //blobStorageService.deleteFile(emotion.getFilesURL(), BlobContainerType.EMOTIONS);
+            }
+
+            // Eliminar la emoción de la base de datos
+            emotionService.deleteById(id);
+
+            return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
