@@ -1,18 +1,25 @@
 package com.harmoniChat.app_hc.api.v1.controllers.emotion_diary;
 
 import com.harmoniChat.app_hc.api.v1.controllers.post.PostRequest;
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
 import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.Emotion;
 import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.EmotionService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,10 +27,14 @@ import java.util.stream.Collectors;
 @RequestMapping("/emotion")
 public class EmotionController {
     private final EmotionService emotionService;
+    private final BlobStorageService blobStorageService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public EmotionController(EmotionService emotionService) {
+    public EmotionController(EmotionService emotionService, BlobStorageService blobStorageService, ObjectMapper objectMapper) {
         this.emotionService = emotionService;
+        this.blobStorageService = blobStorageService;
+        this.objectMapper = objectMapper;
     }
 
 
@@ -43,11 +54,13 @@ public class EmotionController {
     ) {}
 
     private EmotionResponse convertToResponse(Emotion emotion) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
         return EmotionResponse.builder()
                 .id(emotion.getId())
-                .emocion(emotion.getName())  // "name" en la entidad → "emocion" en el DTO
-                .date(emotion.getCreationDate().toString())
-                .fileUrl(emotion.getFilesURL())  // "filesURL" en la entidad → "fileUrl" en el DTO
+                .emocion(emotion.getName())
+                .date(emotion.getCreationDate().format(formatter)) // Aplicar formateo aquí
+                .fileUrl(emotion.getFilesURL())
                 .description(emotion.getDescription())
                 .build();
     }
@@ -59,32 +72,50 @@ public class EmotionController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
-    @PostMapping("/new")
-    public ResponseEntity<EmotionResponse2> createEmotion(@RequestBody EmotionRequest request) {
-        // Validación básica de los campos requeridos
-        if (request.name() == null || request.description() == null) {
-            return ResponseEntity.badRequest().build();
+    @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EmotionResponse2> createEmotion(
+            @RequestPart("emotion") String emotionJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+
+        try {
+            // Parsear JSON
+            EmotionRequest request = objectMapper.readValue(emotionJson, EmotionRequest.class);
+
+            // Validación básica
+            if (request.name() == null || request.description() == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Subir imagen si existe
+            String fileUrl = null;
+            if (file != null && !file.isEmpty()) {
+                fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
+            }
+
+            // Crear y guardar la emoción
+            Emotion newEmotion = Emotion.builder()
+                    .name(request.name())
+                    .description(request.description())
+                    .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Hardcodeado temporal
+                    .filesURL(fileUrl)
+                    .build();
+
+            Emotion savedEmotion = emotionService.createNew(newEmotion, file);
+
+            // Convertir a DTO de respuesta
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
+            EmotionResponse2 response = new EmotionResponse2(
+                    savedEmotion.getName(),
+                    savedEmotion.getDescription(),
+                    savedEmotion.getFilesURL(),
+                    savedEmotion.getCreationDate().format(formatter) // Formatear aquí
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        // Crear y guardar la nueva emoción
-        Emotion newEmotion = Emotion.builder()
-                .name(request.name())                 // Nombre de la emoción (ej: "Alegría")
-                .description(request.description())   // Descripción del usuario
-                .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Convertir String a UUID
-                .filesURL(null)                       // Opcional, puede ser null
-                .build();
-
-        Emotion savedEmotion = emotionService.createNew(newEmotion);
-
-        // Convertir a DTO de respuesta
-        EmotionResponse2 response = new EmotionResponse2(
-                savedEmotion.getName(),      // Se mantiene name (no necesitas convertirlo)
-                savedEmotion.getDescription(),
-                savedEmotion.getFilesURL(),  // Puede ser null
-                savedEmotion.getCreationDate().toString()
-        );
-
-        return ResponseEntity.ok(response);
     }
 
     // Registros (DTOs) para request/response
@@ -103,6 +134,7 @@ public class EmotionController {
 
 
 //    public ResponseEntity<Emotion> createEmotion(@PathVariable UUID userId, @RequestBody final EmotionRequest request){
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", Locale.US);
 //        Emotion newEmotion = Emotion.builder()
 //                .userId(userId)
 //                .name(request.name())
