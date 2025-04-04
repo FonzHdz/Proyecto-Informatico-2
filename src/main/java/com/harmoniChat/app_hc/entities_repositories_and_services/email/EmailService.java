@@ -42,7 +42,7 @@ public class EmailService {
                 "¡Gracias por unirte a nuestra comunidad familiar!\n\n" +
                 "Con cariño,\n" +
                 "El equipo de HarmoniChat\n" +
-                "https://www.localhost:3000.com";
+                "http://localhost:3000";
 
         message.setText(emailBody);
         mailSender.send(message);
