@@ -3,7 +3,6 @@ package com.harmoniChat.app_hc.api.v1.controllers.user;
 import com.harmoniChat.app_hc.entities_repositories_and_services.email.EmailService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.Family;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.FamilyRepository;
-import com.harmoniChat.app_hc.entities_repositories_and_services.family.FamilyService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserService;
 import lombok.AllArgsConstructor;
@@ -21,13 +20,11 @@ import java.util.UUID;
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
-    private final FamilyService familyService;
     private final FamilyRepository familyRepository;
     private final EmailService emailService;
 
-    public UserController(UserService userService, FamilyService familyService, FamilyRepository familyRepository, EmailService emailService) {
+    public UserController(UserService userService, FamilyRepository familyRepository, EmailService emailService) {
         this.userService = userService;
-        this.familyService = familyService;
         this.familyRepository = familyRepository;
         this.emailService = emailService;
     }
@@ -35,6 +32,13 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
+            // Validación de roles hijos
+            if ((request.getRole().equals("Hijo") || request.getRole().equals("Hija"))) {
+                if (request.getInviteCode() == null || request.getInviteCode().isEmpty()) {
+                    return ResponseEntity.badRequest().body("Se requiere código de invitación para los hijos");
+                }
+            }
+
             User user = new User();
             user.setFirstName(request.getFirstName());
             user.setLastName(request.getLastName());
@@ -46,32 +50,41 @@ public class UserController {
             user.setDocumentNumber(request.getDocumentNumber());
             user.setPhoneNumber(request.getPhoneNumber());
 
-            User registeredUser = userService.registerUser(user, request.getInviteCode());
+            // Lógica modificada para manejo de familias
+            User registeredUser;
+            String familyCode = null;
 
-            if (userService.existsByDocumentNumber(request.getDocumentType(), request.getDocumentNumber())) {
-                return ResponseEntity.badRequest().body("El número de documento ya está registrado");
+            if (isFamilyCreator(request.getRole())) {
+                if (request.getInviteCode() != null && !request.getInviteCode().isEmpty()) {
+                    // Unirse a familia existente como padre/madre
+                    registeredUser = userService.registerUser(user, request.getInviteCode());
+                } else {
+                    // Crear nueva familia
+                    registeredUser = userService.registerUser(user, null);
+                    Family family = familyRepository.findById(registeredUser.getFamilyId().getId())
+                            .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
+                    familyCode = family.getInviteCode();
+                }
+            } else {
+                // Unirse a familia existente como hijo
+                registeredUser = userService.registerUser(user, request.getInviteCode());
             }
 
-            if ((request.getRole().equals("Hijo") || request.getRole().equals("Hija"))
-                    && (request.getInviteCode() == null || request.getInviteCode().isEmpty())) {
-                return ResponseEntity.badRequest().body("Se requiere código de invitación para los hijos");
-            }
+            // Envío de correos
+            emailService.sendRegistrationEmail(registeredUser.getEmail(), registeredUser.getFirstName());
 
-            if (isFamilyCreator(registeredUser.getRole())) {
-                Family family = familyRepository.findById(registeredUser.getFamilyId().getId())
-                        .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
-
+            if (familyCode != null) {
                 emailService.sendInvitationEmail(
                         registeredUser.getEmail(),
                         registeredUser.getFirstName(),
-                        family.getInviteCode(),
-                        "http://localhost:3000/registro?invite=" + family.getInviteCode()
+                        familyCode,
+                        "http://localhost:3000/registro?invite=" + familyCode
                 );
 
                 return ResponseEntity.ok(new UserRegistrationResponse(
                         registeredUser,
                         "Usuario registrado y correo enviado",
-                        family.getInviteCode()
+                        familyCode
                 ));
             }
 
