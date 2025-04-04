@@ -1,15 +1,19 @@
 document.getElementById('role').addEventListener('change', function() {
-    if (!getQueryParam('invite')) {
-        const role = this.value;
-        const isChild = role === 'Hijo' || role === 'Hija';
-        
-        document.getElementById('familyCodeField').classList.toggle('hidden', !isChild);
-        
-        if (role === 'Padre' || role === 'Madre') {
-            generarFamilyId();
-        } else if (isChild) {
-            document.getElementById('familyCode').value = '';
-        }
+    const role = this.value;
+    const isChild = role === 'Hijo' || role === 'Hija';
+    const hasInviteCheckbox = document.getElementById('hasInviteCode');
+    const familyCodeField = document.getElementById('familyCodeField');
+    
+    if (isChild) {
+        // Para hijos: checkbox marcado y deshabilitado
+        hasInviteCheckbox.checked = true;
+        hasInviteCheckbox.disabled = true;
+        familyCodeField.classList.remove('hidden');
+    } else {
+        // Para otros roles: checkbox desmarcado y habilitado
+        hasInviteCheckbox.checked = false;
+        hasInviteCheckbox.disabled = false;
+        familyCodeField.classList.add('hidden');
     }
 });
 function loadRoleOptions() {
@@ -53,16 +57,19 @@ function getQueryParam(param) {
 
 function handleInviteCodeFromUrl() {
     const inviteCode = getQueryParam('invite');
-    if (inviteCode) {
-        document.getElementById('familyCode').value = inviteCode;
-        document.getElementById('familyCode').readOnly = true;
-        document.getElementById('familyCodeField').classList.remove('hidden');
-        document.getElementById('hasInviteCode').checked = true;
-        document.getElementById('hasInviteCode').disabled = true;
-        
-        document.getElementById('familyCodeHelp').textContent = 
-            'Estás registrándote con un código de invitación familiar';
-    }
+    if (!inviteCode) return;
+    
+    const familyCodeInput = document.getElementById('familyCode');
+    const hasInviteCheckbox = document.getElementById('hasInviteCode');
+    
+    familyCodeInput.value = inviteCode;
+    familyCodeInput.readOnly = true;
+    document.getElementById('familyCodeField').classList.remove('hidden');
+    hasInviteCheckbox.checked = true;
+    hasInviteCheckbox.disabled = true;
+    
+    document.getElementById('familyCodeHelp').textContent = 
+        'Estás registrándote con un código de invitación familiar';
 }
 
 function copyInvitationCode() {
@@ -94,8 +101,22 @@ async function validarCedula() {
     }
 }
 
+async function validarContraseñas() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+        
+    try {
+        if (password !== confirmPassword) {
+            alert('Las contraseñas no coinciden');
+            return;
+        }
+        return;
+    } catch (error) {
+        console.error('Error validando cédulas:', error);
+    }
+}
+
 async function registrarUsuario() {
-    // Obtener valores
     const formData = {
         firstName: document.getElementById('firstName').value,
         lastName: document.getElementById('lastName').value,
@@ -105,64 +126,21 @@ async function registrarUsuario() {
         phoneNumber: document.getElementById('phoneNumber').value,
         email: document.getElementById('email').value,
         password: document.getElementById('password').value,
-        confirmPassword: document.getElementById('confirmPassword').value,
         role: document.getElementById('role').value,
         inviteCode: document.getElementById('familyCode').value || null
     };
 
     // Validaciones
-    const inviteCodeFromUrl = getQueryParam('invite');
-    if (inviteCodeFromUrl && !(formData.role === 'Hijo' || formData.role === 'Hija')) {
-        alert('Con código de invitación solo puedes registrarte como Hijo/Hija');
+    if ((formData.role === 'Hijo' || formData.role === 'Hija') && !formData.inviteCode) {
+        alert('Se requiere código de invitación para los hijos');
         return;
     }
-
-    if (formData.password !== formData.confirmPassword) {
-        alert('Las contraseñas no coinciden');
-        return;
-    }
-
-    // Verificar documento ANTES de enviar
-    try {
-        const response = await axios.get('http://localhost:8070/user/check-document', {
-            params: {
-                documentType: formData.documentType,
-                documentNumber: formData.documentNumber
-            }
-        });
-        
-        if (response.data.exists) {
-            alert('El número de documento ya está registrado');
-            return;
-        }
-    } catch (error) {
-        console.error('Error verificando documento:', error);
-        alert('Error verificando documento');
-        return;
-    }
-
-    // Preparar datos para el backend (eliminamos confirmPassword)
-    const userData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        gender: formData.gender,
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        inviteCode: inviteCodeFromUrl || formData.inviteCode || null
-    };
 
     try {
-        const response = await axios.post('http://localhost:8070/user/register', userData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await axios.post('http://localhost:8070/user/register', formData);
         
-        if (userData.role === 'Padre' || userData.role === 'Madre') {
+        // Solo mostrar código de invitación si es el creador de la familia
+        if ((formData.role === 'Padre' || formData.role === 'Madre') && !formData.inviteCode) {
             document.getElementById('invitationSection').classList.remove('hidden');
             document.getElementById('invitationCode').value = response.data.familyCode;
         } else {
@@ -170,73 +148,49 @@ async function registrarUsuario() {
         }
     } catch (error) {
         console.error('Error en el registro:', error);
-        // Mostrar mensaje más detallado
         if (error.response) {
-            alert(error.response.data.message || 
-                 error.response.data || 
-                 'Error en el registro. Verifica los datos e intenta nuevamente.');
+            alert(error.response.data || 'Error en el registro. Verifica los datos e intenta nuevamente.');
         } else {
             alert('Error de conexión. Intenta nuevamente.');
         }
     }
 }
 
-function toggleInviteCodeField() {
-    const hasInviteCode = document.getElementById('hasInviteCode').checked;
-    const familyCodeField = document.getElementById('familyCodeField');
+// Modifica la función loadRoleOptions
+function loadRoleOptions() {
     const roleSelect = document.getElementById('role');
+    roleSelect.innerHTML = '<option value="">Selecciona tu rol</option>';
     
-    if (hasInviteCode) {
-        familyCodeField.classList.remove('hidden');
-        document.getElementById('familyCodeHelp').textContent = 
-            'Ingresa el código de invitación a tu familia';
-    } else {
-        familyCodeField.classList.add('hidden');
-    }
+    const roles = [
+        { value: 'Padre', text: 'Padre' },
+        { value: 'Madre', text: 'Madre' },
+        { value: 'Hijo', text: 'Hijo' },
+        { value: 'Hija', text: 'Hija' }
+    ];
     
-    roleSelect.addEventListener('change', function() {
-        if (this.value === 'Hijo' || this.value === 'Hija') {
-            document.getElementById('hasInviteCode').checked = true;
-            toggleInviteCodeField();
-            document.getElementById('hasInviteCode').disabled = true;
-        } else {
-            document.getElementById('hasInviteCode').disabled = false;
-        }
+    roles.forEach(role => {
+        const option = document.createElement('option');
+        option.value = role.value;
+        option.textContent = role.text;
+        roleSelect.appendChild(option);
     });
-}
-
-function generarFamilyId() {
-    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let result = 'FAM-';
-    
-    for (let i = 0; i < 6; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    
-    document.getElementById('familyCode').value = result;
-    return result;
 }
 
 window.onload = function() {
     loadRoleOptions();
     handleInviteCodeFromUrl();
-    let currentIndex = 0;
-    const images = document.querySelectorAll('.carousel img');
-    const indicators = document.querySelectorAll('.carousel-indicators .indicator');
-
-    function updateCarousel() {
-        images.forEach((img, index) => {
-            img.style.display = index === currentIndex ? 'block' : 'none';
-        });
-        indicators.forEach((indicator, index) => {
-            indicator.classList.toggle('bg-[#5F3195]', index === currentIndex);
-        });
+    
+    // Configuración inicial del checkbox
+    document.getElementById('hasInviteCode').addEventListener('change', function() {
+        document.getElementById('familyCodeField').classList.toggle('hidden', !this.checked);
+    });
+    
+    // Si hay código en URL, forzar selección de hijo/hija
+    if (getQueryParam('invite')) {
+        document.getElementById('role').value = 'Hijo';
+        document.getElementById('role').dispatchEvent(new Event('change'));
     }
-
-    setInterval(() => {
-        currentIndex = (currentIndex + 1) % images.length;
-        updateCarousel();
-    }, 3000);
-
-    updateCarousel();
+    
+    // Resto de tu inicialización (carrusel, etc.)
+    initCarousel();
 };
