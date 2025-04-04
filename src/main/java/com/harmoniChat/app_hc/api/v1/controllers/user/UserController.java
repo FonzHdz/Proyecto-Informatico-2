@@ -23,7 +23,9 @@ public class UserController {
     private final FamilyRepository familyRepository;
     private final EmailService emailService;
 
-    public UserController(UserService userService, FamilyRepository familyRepository, EmailService emailService) {
+    public UserController(UserService userService,
+                          FamilyRepository familyRepository,
+                          EmailService emailService) {
         this.userService = userService;
         this.familyRepository = familyRepository;
         this.emailService = emailService;
@@ -50,24 +52,14 @@ public class UserController {
             user.setDocumentNumber(request.getDocumentNumber());
             user.setPhoneNumber(request.getPhoneNumber());
 
-            // Lógica modificada para manejo de familias
-            User registeredUser;
+            User registeredUser = userService.registerUser(user, request.getInviteCode());
             String familyCode = null;
 
+            // Solo obtener código si es creador de familia (no usó código existente)
             if (isFamilyCreator(request.getRole())) {
-                if (request.getInviteCode() != null && !request.getInviteCode().isEmpty()) {
-                    // Unirse a familia existente como padre/madre
-                    registeredUser = userService.registerUser(user, request.getInviteCode());
-                } else {
-                    // Crear nueva familia
-                    registeredUser = userService.registerUser(user, null);
-                    Family family = familyRepository.findById(registeredUser.getFamilyId().getId())
-                            .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
-                    familyCode = family.getInviteCode();
+                if (request.getInviteCode() == null || request.getInviteCode().isEmpty()) {
+                    familyCode = registeredUser.getFamilyId().getInviteCode();
                 }
-            } else {
-                // Unirse a familia existente como hijo
-                registeredUser = userService.registerUser(user, request.getInviteCode());
             }
 
             // Envío de correos
@@ -98,7 +90,6 @@ public class UserController {
     public ResponseEntity<?> checkDocumentExists(
             @RequestParam String documentType,
             @RequestParam String documentNumber) {
-
         boolean exists = userService.existsByDocumentNumber(documentType, documentNumber);
         return ResponseEntity.ok(Map.of("exists", exists));
     }
@@ -119,6 +110,8 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Contraseña incorrecta");
             }
+
+            // Limpiar contraseña antes de devolver
             user.setPassword(null);
             return ResponseEntity.ok(user);
 
@@ -128,7 +121,6 @@ public class UserController {
         }
     }
 
-    // Endpoint original para creación directa (mantenido por compatibilidad)
     @PostMapping("/create")
     public ResponseEntity<User> createUser(@RequestBody User user) {
         User newUser = userService.createNewUser(user);
@@ -150,6 +142,7 @@ public class UserController {
         return "Padre".equalsIgnoreCase(role) || "Madre".equalsIgnoreCase(role);
     }
 
+    // Clases DTO internas
     @Data
     public static class UserRegistrationRequest {
         private String firstName;
