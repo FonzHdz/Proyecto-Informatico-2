@@ -26,6 +26,11 @@ public class PostService {
         postRepository.save(post);
     }
 
+    public Post create (Post post){
+        postRepository.save(post);
+        return post;
+    }
+
     public Optional<List<Post>> getAllPostByFamilyId (UUID familyId){
         return postRepository.findAllByFamilyId(familyId);
     }

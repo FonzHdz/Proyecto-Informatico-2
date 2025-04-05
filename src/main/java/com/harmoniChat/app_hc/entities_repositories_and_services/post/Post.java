@@ -41,6 +41,11 @@ public class Post {
 
     @Getter
     @Setter
+    @Column(name = "location")
+    private String location;
+
+    @Getter
+    @Setter
     @Column(name = "files_url")
     private String filesURL;
 

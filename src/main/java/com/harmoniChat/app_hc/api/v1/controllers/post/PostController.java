@@ -4,6 +4,7 @@ import com.harmoniChat.app_hc.entities_repositories_and_services.post.Post;
 import com.harmoniChat.app_hc.entities_repositories_and_services.post.PostService;
 //import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 //import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserRepository;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
@@ -20,13 +21,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/Publications")
+@RequestMapping("/publications")
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
     private final ObjectMapper objectMapper;
-
-    @PostMapping("/create/{userId}/{familyId}")
+/*
+    @PostMapping("/new/{userId}/{familyId}")
     public ResponseEntity<?> createPost(
             @PathVariable UUID userId,
             @PathVariable UUID familyId,
@@ -53,7 +54,51 @@ public class PostController {
                             "details", e.getMessage()
                     ));
         }
+    }*/
+
+    public record PostRequest(// Nombre de la emoción (ej: "Alegría")
+            String description,  // Descripción textual
+            String location
+    ) {}
+
+    public record PostResponse2(// Igual que en request
+            String description,   // Igual que en request
+            String filesURL,      // URL de imagen (puede ser null)
+            String creationDate,// Fecha como String
+            String location
+    ) {}
+
+    @PostMapping("/new")
+    public ResponseEntity<PostResponse2> createEmotion(@RequestBody PostRequest request) {
+        // Validación básica de los campos requeridos
+        if (request.description() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Crear y guardar la nueva emoción
+        Post newPost = Post.builder()
+                .description(request.description())
+                .location(request.location())// Descripción del usuario
+                .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Convertir String a UUID
+                .familyId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24O9"))
+                .filesURL(null)                       // Opcional, puede ser null
+                .build();
+
+
+        Post savedPost = postService.create(newPost);
+
+        // Convertir a DTO de respuesta
+        PostResponse2 response = new PostResponse2(
+                savedPost.getLocation(),
+                savedPost.getDescription(),
+                savedPost.getFilesURL(),  // Puede ser null
+                savedPost.getCreationDate().toString()
+        );
+
+        return ResponseEntity.ok(response);
     }
+
+
 
     @GetMapping("/family/{familyId}")
     public ResponseEntity<List<Post>> findByFamily(@PathVariable UUID familyId) {
@@ -70,4 +115,5 @@ public class PostController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
     }
+
 }
