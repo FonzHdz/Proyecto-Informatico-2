@@ -32,3 +32,24 @@
 .carousel-indicators .active {
     background-color: #5F3195;
 }
+
+.swal2-toast {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.swal2-success {
+    color: #166534 !important;
+}
+
+.swal2-error {
+    color: #b91c1c !important;
+}
+
+.swal2-info {
+    color: #1e40af !important;
+}
+
+.swal2-popup {
+    font-family: 'Inter', sans-serif !important;
+}

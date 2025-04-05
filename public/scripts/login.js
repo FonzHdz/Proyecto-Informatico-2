@@ -1,3 +1,4 @@
+// Configuración inicial del carrusel
 let currentIndex = 0;
 const images = document.querySelectorAll('.carousel img');
 const indicators = document.querySelectorAll('.carousel-indicators .indicator');
@@ -18,11 +19,102 @@ setInterval(() => {
 
 updateCarousel();
 
+// Funciones para notificaciones Toast
+function showSuccessToast(message) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        },
+        background: '#f0fdf4',
+        iconColor: '#16a34a',
+        color: '#166534'
+    });
+    
+    Toast.fire({
+        icon: 'success',
+        title: message
+    });
+}
+
+function showErrorToast(message) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        },
+        background: '#fef2f2',
+        iconColor: '#dc2626',
+        color: '#b91c1c'
+    });
+    
+    Toast.fire({
+        icon: 'error',
+        title: message
+    });
+}
+
+function showInfoToast(message) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        },
+        background: '#eff6ff',
+        iconColor: '#2563eb',
+        color: '#1e40af'
+    });
+    
+    Toast.fire({
+        icon: 'info',
+        title: message
+    });
+}
+
+// Función principal de login
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    
+    // Validación básica de campos
+    if (!email || !password) {
+        showErrorToast('Por favor completa todos los campos');
+        return;
+    }
+    
+    // Mostrar loader
+    const loader = Swal.fire({
+        title: 'Iniciando sesión',
+        html: 'Validando tus credenciales...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#f8fafc',
+        backdrop: `
+            rgba(0,0,0,0.4)
+            url("/Imagenes/loading.gif")
+            center top
+            no-repeat
+        `
+    });
     
     try {
         const response = await fetch('http://localhost:8070/user/login', {
@@ -39,17 +131,58 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const data = await response.json();
         
         if (!response.ok) {
-            // Mostrar mensaje de error
-            alert(data || 'Error durante el inicio de sesión');
+            await loader.close();
+            showErrorToast(data.message || 'Credenciales incorrectas');
             return;
         }
         
-        localStorage.setItem('user', JSON.stringify(data));
+        // Cerrar loader
+        await loader.close();
         
-        window.location.href = 'http://localhost:3001'; // Cambiar
+        // Mostrar éxito
+        showSuccessToast(`Bienvenido ${data.firstName}!`);
+        
+        // Almacenar y redirigir
+        localStorage.setItem('harmonichat_user', JSON.stringify(data));
+        const userData = encodeURIComponent(JSON.stringify(data));
+        
+        // Redirigir después de 1.5 segundos
+        setTimeout(() => {
+            window.location.href = `http://localhost:3001?user=${userData}`;
+        }, 1500);
         
     } catch (error) {
+        await loader.close();
         console.error('Error:', error);
-        alert('Error al conectar con el servidor');
+        showErrorToast('Error al conectar con el servidor');
     }
 });
+
+// Evento para mostrar/ocultar contraseña
+document.querySelector('.fi-ss-eye-crossed').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const icon = this;
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fi-ss-eye-crossed');
+        icon.classList.add('fi-ss-eye');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fi-ss-eye');
+        icon.classList.add('fi-ss-eye-crossed');
+    }
+});
+
+// Inicialización al cargar la página
+window.onload = function() {
+    // Verificar si hay mensaje en la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    
+    if (message) {
+        showInfoToast(decodeURIComponent(message));
+        // Limpiar la URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+};
