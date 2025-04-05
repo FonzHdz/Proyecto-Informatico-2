@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface EmotionRepository extends JpaRepository<Emotion, UUID> {
 
-    List<Emotion> findAllByUserId (UUID userId);
-    boolean existsById(UUID id);
+    boolean existsById(UUID userId);
+    List<Emotion> findByUserIdOrderByCreationDateDesc(UUID userId);
 }

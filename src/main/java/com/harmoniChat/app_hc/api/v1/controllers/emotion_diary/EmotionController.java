@@ -1,5 +1,6 @@
 package com.harmoniChat.app_hc.api.v1.controllers.emotion_diary;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
 import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.Emotion;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -35,12 +37,15 @@ public class EmotionController {
     }
 
 
-//    @GetMapping("/user/{userId}")
-//    public ResponseEntity<List<Emotion>> getAllEmotions(@PathVariable UUID userId){
-//        List<Emotion> emotions = emotionService.findAllByUserId(userId);
-//        return ResponseEntity.ok(emotions);
-//    }
-//
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<EmotionResponse>> findAllByUserId(@PathVariable UUID userId){
+        List<Emotion> emotions = emotionService.findAllByUserId(userId);
+        List<EmotionResponse> response = emotions.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+
     @Builder
     record EmotionResponse(
             UUID id,
@@ -69,18 +74,27 @@ public class EmotionController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
+
     @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EmotionResponse2> createEmotion(
             @RequestPart("emotion") String emotionJson,
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         try {
-            // Parsear JSON
             EmotionRequest request = objectMapper.readValue(emotionJson, EmotionRequest.class);
 
-            // Validación básica
-            if (request.name() == null || request.description() == null) {
+            // Validación
+            if (request.name() == null || request.name().trim().isEmpty()) {
+                System.out.println("Error: name es null o vacío");
                 return ResponseEntity.badRequest().build();
+            }
+
+            UUID userId;
+            try {
+                userId = UUID.fromString(request.userId());
+            } catch (IllegalArgumentException e) {
+                System.out.println("UUID inválido: " + request.userId());
+                return ResponseEntity.badRequest().body(null);
             }
 
             // Subir imagen si existe
@@ -92,8 +106,8 @@ public class EmotionController {
             // Crear y guardar la emoción
             Emotion newEmotion = Emotion.builder()
                     .name(request.name())
+                    .userId(userId)
                     .description(request.description())
-                    .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Hardcodeado temporal
                     .filesURL(fileUrl)
                     .build();
 
@@ -106,10 +120,11 @@ public class EmotionController {
                     savedEmotion.getName(),
                     savedEmotion.getDescription(),
                     savedEmotion.getFilesURL(),
-                    savedEmotion.getCreationDate().format(formatter) // Formatear aquí
+                    savedEmotion.getCreationDate().format(formatter),
+                    savedEmotion.getUserId()
             );
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -143,14 +158,16 @@ public class EmotionController {
     // Registros (DTOs) para request/response
     public record EmotionRequest(
             String name,          // Nombre de la emoción (ej: "Alegría")
-            String description   // Descripción textual
+            String description,   // Descripción textual
+            String  userId
     ) {}
 
     public record EmotionResponse2(
             String name,          // Igual que en request
             String description,   // Igual que en request
             String filesURL,      // URL de imagen (puede ser null)
-            String creationDate   // Fecha como String
+            String creationDate,   // Fecha como
+            UUID userId
     ) {}
 }
 

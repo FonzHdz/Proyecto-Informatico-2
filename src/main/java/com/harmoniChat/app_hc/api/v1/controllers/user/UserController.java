@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,15 +33,90 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
+    public ResponseEntity<Map<String, Object>> registerUser(@RequestBody UserRegistrationRequest request) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
-            // Validación de roles hijos
-            if ((request.getRole().equals("Hijo") || request.getRole().equals("Hija"))) {
-                if (request.getInviteCode() == null || request.getInviteCode().isEmpty()) {
-                    return ResponseEntity.badRequest().body("Se requiere código de invitación para los hijos");
-                }
+            // Validación de campos vacíos
+            if (request.getFirstName() == null || request.getFirstName().isEmpty() ||
+                    request.getLastName() == null || request.getLastName().isEmpty() ||
+                    request.getEmail() == null || request.getEmail().isEmpty() ||
+                    request.getPassword() == null || request.getPassword().isEmpty() ||
+                    request.getRole() == null || request.getRole().isEmpty() ||
+                    request.getGender() == null || request.getGender().isEmpty() ||
+                    request.getDocumentType() == null || request.getDocumentType().isEmpty() ||
+                    request.getDocumentNumber() == null || request.getDocumentNumber().isEmpty() ||
+                    request.getPhoneNumber() == null || request.getPhoneNumber().isEmpty()) {
+
+                response.put("success", false);
+                response.put("message", "Todos los campos son obligatorios");
+                return ResponseEntity.badRequest().body(response);
             }
 
+            // Validación de rol
+            if (request.getRole().equals("Selecciona tu rol")) {
+                response.put("success", false);
+                response.put("message", "Debe seleccionar un rol válido");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de nombres (solo letras)
+            if (!request.getFirstName().matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+") ||
+                    !request.getLastName().matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")) {
+
+                response.put("success", false);
+                response.put("message", "Nombre y apellido solo pueden contener letras");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de documento (máximo 12 dígitos)
+            if (!request.getDocumentNumber().matches("\\d{6,12}")) {
+                response.put("success", false);
+                response.put("message", "El documento debe contener máximo 12 dígitos");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de teléfono (exactamente 10 dígitos)
+            if (!request.getPhoneNumber().matches("\\d{10}")) {
+                response.put("success", false);
+                response.put("message", "El teléfono debe contener exactamente 10 dígitos");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de email
+            if (!request.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                response.put("success", false);
+                response.put("message", "El correo electrónico no tiene un formato válido");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de email único
+            if (userService.existsByEmail(request.getEmail())) {
+                response.put("success", false);
+                response.put("message", "El correo electrónico ya está registrado");
+                response.put("errorType", "email");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de documento único
+            if (userService.existsByDocumentNumber(request.getDocumentType(), request.getDocumentNumber())) {
+                response.put("success", false);
+                response.put("message", "El número de documento ya está registrado");
+                response.put("errorType", "document");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validación de roles hijos
+            if ((request.getRole().equals("Hijo") || request.getRole().equals("Hija")) &&
+                    (request.getInviteCode() == null || request.getInviteCode().isEmpty())) {
+
+                response.put("success", false);
+                response.put("message", "Se requiere código de invitación para los hijos");
+                response.put("errorType", "inviteCode");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Creación del usuario
             User user = new User();
             user.setFirstName(request.getFirstName());
             user.setLastName(request.getLastName());
@@ -55,7 +131,7 @@ public class UserController {
             User registeredUser = userService.registerUser(user, request.getInviteCode());
             String familyCode = null;
 
-            // Solo obtener código si es creador de familia (no usó código existente)
+            // Lógica para creadores de familia
             if (isFamilyCreator(request.getRole())) {
                 if (request.getInviteCode() == null || request.getInviteCode().isEmpty()) {
                     familyCode = registeredUser.getFamilyId().getInviteCode();
@@ -65,6 +141,11 @@ public class UserController {
             // Envío de correos
             emailService.sendRegistrationEmail(registeredUser.getEmail(), registeredUser.getFirstName());
 
+            // Preparar respuesta exitosa
+            response.put("success", true);
+            response.put("message", "Usuario registrado exitosamente");
+            response.put("user", registeredUser);
+
             if (familyCode != null) {
                 emailService.sendInvitationEmail(
                         registeredUser.getEmail(),
@@ -72,70 +153,150 @@ public class UserController {
                         familyCode,
                         "http://localhost:3000/registro?invite=" + familyCode
                 );
-
-                return ResponseEntity.ok(new UserRegistrationResponse(
-                        registeredUser,
-                        "Usuario registrado y correo enviado",
-                        familyCode
-                ));
+                response.put("familyCode", familyCode);
+                response.put("isFamilyCreator", true);
             }
 
-            return ResponseEntity.ok(registeredUser);
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.put("success", false);
+            response.put("message", "Error en el registro: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
     @GetMapping("/check-document")
-    public ResponseEntity<?> checkDocumentExists(
+    public ResponseEntity<Map<String, Object>> checkDocumentExists(
             @RequestParam String documentType,
             @RequestParam String documentNumber) {
-        boolean exists = userService.existsByDocumentNumber(documentType, documentNumber);
-        return ResponseEntity.ok(Map.of("exists", exists));
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            boolean exists = userService.existsByDocumentNumber(documentType, documentNumber);
+            response.put("exists", exists);
+            response.put("message", exists ? "Documento ya registrado" : "Documento disponible");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("error", true);
+            response.put("message", "Error al verificar documento");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> loginUser(@RequestBody LoginRequest loginRequest) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
             Optional<User> userOptional = userService.findByEmail(loginRequest.getEmail());
 
             if (userOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Usuario no encontrado");
+                response.put("success", false);
+                response.put("message", "Usuario no encontrado");
+                response.put("errorType", "email");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
             User user = userOptional.get();
 
             if (!user.getPassword().equals(loginRequest.getPassword())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Contraseña incorrecta");
+                response.put("success", false);
+                response.put("message", "Contraseña incorrecta");
+                response.put("errorType", "password");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
             // Limpiar contraseña antes de devolver
             user.setPassword(null);
-            return ResponseEntity.ok(user);
+
+            response.put("success", true);
+            response.put("message", "Inicio de sesión exitoso");
+            response.put("user", user);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error durante el inicio de sesión: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "Error durante el inicio de sesión");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     @PostMapping("/create")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User newUser = userService.createNewUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody User user) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            User newUser = userService.createNewUser(user);
+            response.put("success", true);
+            response.put("message", "Usuario creado exitosamente");
+            response.put("user", newUser);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al crear usuario");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.findAll();
-        return users.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(users);
+    public ResponseEntity<Map<String, Object>> getAllUsers() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<User> users = userService.findAll();
+            if (users.isEmpty()) {
+                response.put("message", "No hay usuarios registrados");
+                return ResponseEntity.ok(response);
+            }
+            response.put("success", true);
+            response.put("users", users);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al obtener usuarios");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<Optional<User>> getUserById(@PathVariable UUID userId) {
-        return ResponseEntity.ok(userService.findById(userId));
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable UUID userId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Optional<User> user = userService.findById(userId);
+            if (user.isEmpty()) {
+                response.put("message", "Usuario no encontrado");
+                return ResponseEntity.ok(response);
+            }
+            response.put("success", true);
+            response.put("user", user.get());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al obtener usuario");
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/{userId}/family-members")
+    public ResponseEntity<Map<String, Object>> getFamilyMembers(@PathVariable UUID userId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Implementar lógica para obtener miembros de la familia
+            // List<User> familyMembers = userService.getFamilyMembers(userId);
+            // response.put("familyMembers", familyMembers);
+
+            response.put("success", true);
+            response.put("message", "Endpoint en desarrollo");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al obtener miembros de la familia");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     private boolean isFamilyCreator(String role) {
@@ -155,14 +316,6 @@ public class UserController {
         private String documentNumber;
         private String phoneNumber;
         private String inviteCode;
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class UserRegistrationResponse {
-        private User user;
-        private String message;
-        private String familyCode;
     }
 
     @Data

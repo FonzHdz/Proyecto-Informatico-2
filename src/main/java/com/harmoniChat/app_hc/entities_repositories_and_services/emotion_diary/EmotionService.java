@@ -26,10 +26,11 @@ public class EmotionService {
     public List<Emotion> getAllEmotions() {
         return emotionRepository.findAll();
     }
-//    public List<Emotion> findAllByUserId(UUID userId){
-//        return emotionRepository.findAllByUserId(userId);
-//    }
-//
+
+    public List<Emotion> findAllByUserId(UUID userId){
+        return emotionRepository.findByUserIdOrderByCreationDateDesc(userId);
+    }
+
     public Emotion createNew(Emotion emotion, MultipartFile file) throws IOException {
         if (file != null && !file.isEmpty()) {
             String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
