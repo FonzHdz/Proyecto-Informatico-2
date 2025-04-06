@@ -4,9 +4,12 @@ import com.harmoniChat.app_hc.entities_repositories_and_services.post.Post;
 import com.harmoniChat.app_hc.entities_repositories_and_services.post.PostService;
 //import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 //import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserRepository;
+import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
+import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserService;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.coyote.http11.filters.SavedRequestInputFilter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.core.Authentication;
@@ -19,12 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/publications")
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final UserService userService;
     private final ObjectMapper objectMapper;
 /*
     @PostMapping("/new/{userId}/{familyId}")
@@ -80,7 +85,7 @@ public class PostController {
                 .description(request.description())
                 .location(request.location())// Descripción del usuario
                 .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Convertir String a UUID
-                .familyId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24O9"))
+                .familyId(UUID.fromString("07e1a1bd-937a-43ca-a0a9-fbf89f394d00"))
                 .filesURL(null)                       // Opcional, puede ser null
                 .build();
 
@@ -98,7 +103,37 @@ public class PostController {
         return ResponseEntity.ok(response);
     }
 
+    @Builder
+    record PostResponse(
+            UUID id,
+            String author, // Coincide con lo esperado en el frontend
+            String date,
+            String fileUrl, // Coincide con lo esperado en el frontend
+            String content,
+            String location
+    ) {}
 
+    private PostResponse convertToResponse(Post post) {
+        Optional<User> user = userService.findById(UUID.fromString("52ca86a6-296d-4d7e-9eb4-f40915b7da52"));
+        String userName = user.get().getFirstName();
+        return PostResponse.builder()
+                .id(post.getId())
+                .author(userName)  // "name" en la entidad → "emocion" en el DTO
+                .date(post.getCreationDate().toString())
+                .fileUrl(post.getFilesURL())  // "filesURL" en la entidad → "fileUrl" en el DTO
+                .content(post.getDescription())
+                .location(post.getLocation())
+                .build();
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<PostResponse>> getAllEmotions() {
+        List<Post> emotions = postService.getAllPosts();
+        List<PostResponse> response = emotions.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/family/{familyId}")
     public ResponseEntity<List<Post>> findByFamily(@PathVariable UUID familyId) {

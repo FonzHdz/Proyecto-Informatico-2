@@ -31,6 +31,10 @@ public class PostService {
         return post;
     }
 
+    public List<Post> getAllPosts(){
+        return postRepository.findAll();
+    }
+
     public Optional<List<Post>> getAllPostByFamilyId (UUID familyId){
         return postRepository.findAllByFamilyId(familyId);
     }
