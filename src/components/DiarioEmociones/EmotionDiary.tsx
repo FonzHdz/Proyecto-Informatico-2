@@ -3,8 +3,6 @@ import styled from 'styled-components';
 import CreateEmotion from './CreateEmotion';
 import axios from 'axios';
 
-import { wait } from '@testing-library/user-event/dist/utils';
-
 const EmotionContainer = styled.div`
   width: 100%;
   max-width: 1200px;
@@ -130,97 +128,158 @@ const CreateButton = styled.button`
 `;
 
 const getEmotionIcon = (emotion: string) => {
+  if (!emotion) return '😐';
+  
   switch (emotion.toLowerCase()) {
     case 'tristeza':
       return '☹️';
     case 'alegría':
-      return '☺️';
+      return '😊';
     case 'calma':
       return '😌';
+    case 'enojo':
+      return '😠';
+    case 'miedo':
+      return '😨';
+    case 'sorpresa':
+      return '😮';
     default:
       return '😐';
   }
 };
 
 interface EmotionEntry {
-  id: number;
+  id: string;
   emotion: string;
   date: string;
   image: string;
   description: string;
 }
 
-const EmotionDiary: React.FC = () => {
+interface EmotionDiaryProps {
+  userId: string;
+}
+
+const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [emotions, setEmotions] = useState<EmotionEntry[]>([]);
-// Cargar datos desde la API
-useEffect(() => {
-  const fetchEmotions = async () => {
-    try {
-      const response = await axios.get('http://localhost:8070/emotion/all');
-      
-      // Transformamos los datos a la estructura esperada
-      const formattedEmotions = response.data.map((item: any) => ({
-        id: item.id,
-        emotion: item.emocion, // Ajustar clave si es diferente
-        date: item.date,
-        image: item.fileUrl, // Ajustar clave si es diferente
-        description: item.description
-      }));
-      
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Cargar emociones del usuario
+  useEffect(() => {
+    const fetchEmotions = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`http://localhost:8070/emotion/user/${userId}`);
+        
+        const formattedEmotions = response.data
+        .map((item: any) => ({
+          id: item.id,
+          emotion: item.emotion || item.name,
+          date: item.date,
+          image: item.fileUrl,
+          description: item.description,
+          creationDate: new Date(item.date) // Convertir a Date para ordenar
+        }))
+        .sort((a: any, b: any) => a.creationDate - b.creationDate); // Orden ascendente
+        
+        setEmotions(formattedEmotions);
+        setError(null);
+      } catch (err) {
+        console.error('Error al obtener las emociones:', err);
+        setError('No se pudieron cargar las emociones. Intenta nuevamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchEmotions();
+    }
+  }, [userId]);
+
+  const handleCreateEmotion = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8070/emotion/user/${userId}`);
+      const formattedEmotions = response.data
+        .map((item: any) => ({
+          id: item.id,
+          emotion: item.name || item.emotion,
+          date: item.date,
+          image: item.fileUrl,
+          description: item.description,
+          creationDate: new Date(item.date),
+        }))
+        .sort((a: any, b: any) => b.creationDate - a.creationDate); // Más reciente primero
+  
       setEmotions(formattedEmotions);
-    } catch (error) {
-      console.error('Error al obtener las emociones:', error);
+      setError(null);
+    } catch (err) {
+      console.error('Error al obtener las emociones:', err);
+      setError('No se pudieron cargar las emociones. Intenta nuevamente.');
     }
   };
+  
 
-  fetchEmotions();
-}, []);
-
-  const handleCreateEmotion = (emotion: any) => {
-    console.log('Nueva emoción:', emotion);
-    setIsCreateOpen(false);
-  };
-
-  const handleDeleteEmotion = async (id: number) => {
+  const handleDeleteEmotion = async (id: string) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar esta emoción?')) {
       return;
     }
     
     try {
       await axios.delete(`http://localhost:8070/emotion/delete/${id}`);
-      
-      // Actualizar el estado local eliminando la emoción
       setEmotions(prev => prev.filter(emotion => emotion.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar la emoción:', error);
+    } catch (err) {
+      console.error('Error al eliminar la emoción:', err);
+      alert('Error al eliminar la emoción');
     }
   };
 
+  if (isLoading) {
+    return <div>Cargando emociones...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
   return (
-    <EmotionContainer>
-      {emotions.map(entry => (
-        <EmotionCard key={entry.id}>
-          <EmotionHeader>
-            <EmotionIcon>{getEmotionIcon(entry.emotion)}</EmotionIcon>
-            <EmotionInfo>
-              <EmotionTitle>{entry.emotion}</EmotionTitle>
-              <EmotionDate>{entry.date}</EmotionDate>
-            </EmotionInfo>
-          </EmotionHeader>
-          <EmotionImage src={entry.image} alt={entry.emotion} />
-          <EmotionText>{entry.description}</EmotionText>
-          <ActionButtons>
-            <ActionButton>
-              <i className="fi fi-rr-edit"></i>
-            </ActionButton>
-            <ActionButton onClick={() => handleDeleteEmotion(entry.id)}>
-              <i className="fi fi-rr-trash"></i>
-            </ActionButton>
-          </ActionButtons>
-        </EmotionCard>
-      ))}
+    <>
+      <EmotionContainer>
+        {emotions.length > 0 ? (
+          emotions.map(entry => (
+            <EmotionCard key={entry.id}>
+              <EmotionHeader>
+                <EmotionIcon>{getEmotionIcon(entry.emotion)}</EmotionIcon>
+                <EmotionInfo>
+                  <EmotionTitle>{entry.emotion}</EmotionTitle>
+                  <EmotionDate>{entry.date}</EmotionDate>
+                </EmotionInfo>
+              </EmotionHeader>
+              {entry.image && (
+                <EmotionImage 
+                  src={entry.image} 
+                  alt={`Emoción: ${entry.emotion}`} 
+                />
+              )}
+              <EmotionText>{entry.description}</EmotionText>
+              <ActionButtons>
+                <ActionButton>
+                  <i className="fi fi-rr-edit"></i>
+                </ActionButton>
+                <ActionButton onClick={() => handleDeleteEmotion(entry.id)}>
+                  <i className="fi fi-rr-trash"></i>
+                </ActionButton>
+              </ActionButtons>
+            </EmotionCard>
+          ))
+        ) : (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
+            No hay emociones registradas
+          </div>
+        )}
+      </EmotionContainer>
 
       <CreateButton onClick={() => setIsCreateOpen(true)}>
         <i className="fi fi-rr-plus"></i>
@@ -231,8 +290,8 @@ useEffect(() => {
         onClose={() => setIsCreateOpen(false)}
         onSubmit={handleCreateEmotion}
       />
-    </EmotionContainer>
+    </>
   );
 };
 
-export default EmotionDiary; 
+export default EmotionDiary;

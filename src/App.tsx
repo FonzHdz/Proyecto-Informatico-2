@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Posts from './components/MuroSocial/Posts';
 import CreatePost from './components/MuroSocial/CreatePost';
 import Filters from './components/MuroSocial/Filters';
 import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
+import Chat from './components/Chat/Chat';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -152,9 +153,60 @@ const CreateButton = styled.button`
   }
 `;
 
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  familyId: string; 
+}
+
 function App() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('diary');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  const getValidUser = (userString: string | null) => {
+    if (!userString) return null;
+    
+    try {
+      const user = JSON.parse(userString);
+      return user?.id ? user : null;
+    } catch {
+      return null;
+    }
+  };
+  
+  useEffect(() => {
+    const checkAuth = () => {
+      // Verificar parámetros URL
+      const params = new URLSearchParams(window.location.search);
+      const urlUser = getValidUser(params.get('user'));
+      
+      if (urlUser) {
+        setCurrentUser(urlUser);
+        localStorage.setItem('harmonichat_user', JSON.stringify(urlUser));
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Verificar localStorage
+      const storedUser = getValidUser(localStorage.getItem('harmonichat_user'));
+      if (storedUser) {
+        setCurrentUser(storedUser);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Redirigir si no autenticado
+      window.location.href = 'http://localhost:3000';
+    };
+  
+    checkAuth();
+  }, []);
 
   const handleCreatePost = (post: any) => {
     console.log('New post:', post);
@@ -164,94 +216,146 @@ function App() {
     setActiveSection(section);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('harmonichat_user')
+    setCurrentUser(null);
+    window.location.href = 'http://localhost:3000'; // Redirige al frontend de autenticación
+  };
+
   const renderContent = () => {
+    if (isCheckingAuth || !currentUser) {
+      return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          width: '100vw'
+        }}>
+          <div>Cargando aplicación...</div>
+        </div>
+      );
+    }
+  
     switch (activeSection) {
       case 'diary':
-        return <EmotionDiary />;
+        return <EmotionDiary userId={currentUser.id} />;
       case 'posts':
         return (
           <>
             <ContentArea>
-              <Posts />
+              <Posts/>
             </ContentArea>
             <FiltersArea>
               <Filters onFilterChange={(filters) => console.log('Filters:', filters)} />
             </FiltersArea>
           </>
         );
+      case 'chat':
+        console.log('User before chat:', currentUser);
+        return <Chat user={currentUser} />;
       default:
         return <div>Sección en construcción</div>;
     }
   };
 
+  if (isCheckingAuth) {
+    // Muestra un loader mientras verifica la autenticación
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        width: '100vw'
+      }}>
+        <div>Cargando...</div>
+      </div>
+    );
+  }
+
   return (
     <AppContainer>
       <Sidebar>
         <Logo src="/Logo.png" alt="Logo" />
-        <MainIconsContainer>
-          <SidebarIcon 
-            active={activeSection === 'chat'} 
-            onClick={() => handleSectionChange('chat')}
-          >
-            <i className="fi fi-rr-messages"></i>
-          </SidebarIcon>
-          <SidebarIcon 
-            active={activeSection === 'diary'} 
-            onClick={() => handleSectionChange('diary')}
-          >
-            <i className="fi fi-rr-grin"></i>
-          </SidebarIcon>
-          <SidebarIcon 
-            active={activeSection === 'album'} 
-            onClick={() => handleSectionChange('album')}
-          >
-            <i className="fi fi-rr-grid"></i>
-          </SidebarIcon>
-          <SidebarIcon 
-            active={activeSection === 'posts'} 
-            onClick={() => handleSectionChange('posts')}
-          >
-            <i className="fi fi-rr-camera"></i>
-          </SidebarIcon>
-          <SidebarIcon 
-            active={activeSection === 'chatbot'} 
-            onClick={() => handleSectionChange('chatbot')}
-          >
-            <i className="fi fi-rr-robot"></i>
-          </SidebarIcon>
-        </MainIconsContainer>
-        <ProfileIconContainer>
-        <SidebarIcon 
-          active={activeSection === 'profile'} 
-          onClick={() => {
-            handleSectionChange('profile');
-            window.location.href = 'http://localhost:3000'; // Redirección completa
-          }}
-        >
-          <i className="fi fi-rr-user"></i>
-        </SidebarIcon>
-        </ProfileIconContainer>
+        {currentUser && (
+          <>
+            <MainIconsContainer>
+              <SidebarIcon 
+                active={activeSection === 'chat'} 
+                onClick={() => handleSectionChange('chat')}
+              >
+                <i className="fi fi-rr-messages"></i>
+              </SidebarIcon>
+              <SidebarIcon 
+                active={activeSection === 'diary'} 
+                onClick={() => handleSectionChange('diary')}
+              >
+                <i className="fi fi-rr-grin"></i>
+              </SidebarIcon>
+              <SidebarIcon 
+                active={activeSection === 'album'} 
+                onClick={() => handleSectionChange('album')}
+              >
+                <i className="fi fi-rr-grid"></i>
+              </SidebarIcon>
+              <SidebarIcon 
+                active={activeSection === 'posts'} 
+                onClick={() => handleSectionChange('posts')}
+              >
+                <i className="fi fi-rr-camera"></i>
+              </SidebarIcon>
+              <SidebarIcon 
+                active={activeSection === 'chatbot'} 
+                onClick={() => handleSectionChange('chatbot')}
+              >
+                <i className="fi fi-rr-robot"></i>
+              </SidebarIcon>
+            </MainIconsContainer>
+            <ProfileIconContainer>
+              <SidebarIcon 
+                active={activeSection === 'profile'} 
+                onClick={() => handleSectionChange('profile')}
+              >
+                <i className="fi fi-rr-user"></i>
+              </SidebarIcon>
+              <SidebarIcon onClick={handleLogout}>
+                <i className="fi fi-rr-exit"></i>
+              </SidebarIcon>
+            </ProfileIconContainer>
+          </>
+        )}
       </Sidebar>
 
       <Header>
-        {activeSection === 'diary' ? 'Diario de emociones' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+        {currentUser ? (
+          <>
+            {activeSection === 'diary' ? 'Diario de emociones' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            <span style={{ float: 'right', fontSize: '16px' }}>
+            </span>
+          </>
+        ) : (
+          'HarmoniChat'
+        )}
       </Header>
       
       <MainContent>
         {renderContent()}
       </MainContent>
 
-      {activeSection === 'posts' && (
+      {currentUser && activeSection === 'posts' && (
         <CreateButton onClick={() => setIsCreatePostOpen(true)}>
           <i className="fi fi-rr-plus"></i>
         </CreateButton>
       )}
 
-      <CreatePost
-        isOpen={isCreatePostOpen}
-        onClose={() => setIsCreatePostOpen(false)}
-        onSubmit={handleCreatePost}
-      />
+      {currentUser && (
+        <CreatePost
+          isOpen={isCreatePostOpen}
+          onClose={() => setIsCreatePostOpen(false)}
+          onSubmit={handleCreatePost}
+        />
+      )}
     </AppContainer>
   );
 }

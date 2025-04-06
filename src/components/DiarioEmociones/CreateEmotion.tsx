@@ -5,7 +5,7 @@ import axios from 'axios';
 interface CreateEmotionProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (emotion: any) => void;
+  onSubmit?: (emotion?: any) => void;
 }
 
 const PopupOverlay = styled.div`
@@ -169,6 +169,12 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
+    if (!user?.id) {
+      setError('No se encontró usuario. Por favor inicia sesión.');
+      return;
+    }
     
     if (!selectedEmotion || !description) {
       setError('Por favor selecciona una emoción y escribe una descripción');
@@ -179,21 +185,25 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
     setError('');
   
     try {
+      const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
       const emotionObj = emotions.find(e => e.id === selectedEmotion);
       const emotionLabel = emotionObj?.label || selectedEmotion;
   
-      // Crear FormData en lugar de JSON
       const formData = new FormData();
-      formData.append('emotion', JSON.stringify({
+      const emotionData = {
         name: emotionLabel,
-        description: description
+        description: description,
+        userId: user.id
+      };
+
+      formData.append('emotion', new Blob([JSON.stringify(emotionData)], {
+        type: 'application/json'
       }));
-      
-      // Agregar la imagen si existe
+
       if (image) {
         formData.append('file', image);
       }
-  
+      
       const response = await axios.post('http://localhost:8070/emotion/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -202,7 +212,6 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
   
       console.log('Emoción creada:', response.data);
       
-      // Limpiar formulario
       setSelectedEmotion('');
       setDescription('');
       setImage(null);
@@ -210,14 +219,11 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       setIsCreateOpen(false);
       
   
-      // Opcional: llamar a onSubmit para actualizar la lista
       if (onSubmit) {
-        onSubmit(response.data);
+        onSubmit();
       }
 
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      onClose();
   
     } catch (err) {
       setError('Error al crear la emoción. Por favor intenta nuevamente.');
@@ -263,7 +269,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
             <Label>Agrega una foto o video</Label>
             <input
               type="file"
-              accept="image/*,video/*"
+              accept="image/*"
               onChange={handleImageChange}
               style={{ display: 'none' }}
               id="media-upload"
@@ -272,16 +278,18 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
               <ImagePreview
                 style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
               >
-                {!imagePreview && 'Haz clic para subir una imagen o video'}
+                {!imagePreview && 'Haz clic para subir una imagen'}
               </ImagePreview>
             </label>
           </FormSection>
 
-          <Button type="submit">Guardar entrada</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Guardando...' : 'Guardar emoción'}
+          </Button>
         </Form>
       </PopupContent>
     </PopupOverlay>
   );
 };
 
-export default CreateEmotion; 
+export default CreateEmotion;
