@@ -49,7 +49,7 @@ public class EmotionController {
     @Builder
     record EmotionResponse(
             UUID id,
-            String emocion, // Coincide con lo esperado en el frontend
+            String emotion, // Coincide con lo esperado en el frontend
             String date,
             String fileUrl, // Coincide con lo esperado en el frontend
             String description
@@ -60,7 +60,7 @@ public class EmotionController {
 
         return EmotionResponse.builder()
                 .id(emotion.getId())
-                .emocion(emotion.getName())
+                .emotion(emotion.getName())
                 .date(emotion.getCreationDate().format(formatter)) // Aplicar formateo aquí
                 .fileUrl(emotion.getFilesURL())
                 .description(emotion.getDescription())

@@ -1,5 +1,6 @@
 package com.harmoniChat.app_hc.api.v1.controllers.user;
 
+import ch.qos.logback.classic.Logger;
 import com.harmoniChat.app_hc.entities_repositories_and_services.email.EmailService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.Family;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.FamilyRepository;
@@ -207,12 +208,25 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
-            // Limpiar contraseña antes de devolver
-            user.setPassword(null);
+            // Crear un mapa con los datos relevantes del usuario
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            userData.put("email", user.getEmail());
+            userData.put("role", user.getRole());
+            // Añadir familyId (puede ser null)
+            if (user.getFamilyId() != null) {
+                if (user.getFamilyId() instanceof Family) {
+                    userData.put("familyId", ((Family) user.getFamilyId()).getId().toString());
+                } else {
+                    userData.put("familyId", user.getFamilyId().toString());
+                }
+            }
 
             response.put("success", true);
             response.put("message", "Inicio de sesión exitoso");
-            response.put("user", user);
+            response.put("user", userData);
 
             return ResponseEntity.ok(response);
 

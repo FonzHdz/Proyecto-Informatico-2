@@ -14,6 +14,13 @@ spring:
     url: jdbc:postgresql://harmonichat.c5y240664x6a.us-east-2.rds.amazonaws.com:5432/app_hc
     username: postgres
     password: postgre123
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      leak-detection-threshold: 5000
   jpa:
     hibernate:
       ddl-auto: none
