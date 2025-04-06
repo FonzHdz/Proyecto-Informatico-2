@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import axios  from 'axios';
 
 const PopupOverlay = styled.div`
   position: fixed;
@@ -222,6 +223,7 @@ const familyMembers = [
 ];
 
 const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [location, setLocation] = useState('');
@@ -229,6 +231,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
   const [showMentions, setShowMentions] = useState(false);
   const [selectedMentions, setSelectedMentions] = useState<typeof familyMembers[0][]>([]);
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -261,17 +265,44 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
     !selectedMentions.find(m => m.id === member.id)
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const post = {
-      description,
-      image,
-      location,
-      mentions: selectedMentions,
-      date: new Date().toLocaleString()
-    };
-    onSubmit(post);
-    onClose();
+    if  (!description) {
+      setError('Por favor escribe una descripción');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+
+      // Datos que se enviarán en el body de la solicitud
+      const requestBody = {
+        description: description,   // Descripción del usuario
+        location: location,
+      };
+
+      const response = await axios.post('http://localhost:8070/publications/new', requestBody, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('publicacion Creada', response.data);
+      
+      // Limpiamos el formulario
+      setLocation('');
+      setDescription('');
+      setImage(null);
+      setIsCreateOpen(false);
+
+    } catch (err) {
+      setError('Error al crear la publicacion. Por favor intenta nuevamente.');
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;

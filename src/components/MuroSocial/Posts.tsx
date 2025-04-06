@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
+ 
+ import { wait } from '@testing-library/user-event/dist/utils';
 
 interface Post {
-  id: number;
+  id: string;
   author: string;
   content: string;
   imageUrl: string;
   date: string;
-  likes: number;
-  comments: number;
+  likes?: number;
+  comments?: number;
   location?: string;
   tags?: string[];
 }
@@ -115,17 +118,32 @@ const ActionButton = styled.button`
 `;
 
 const Posts: React.FC = () => {
-  const [posts] = useState<Post[]>([
-    {
-      id: 1,
-      author: 'Papá',
-      content: 'Hoy salí con ganas de comerme un helado pero cuando estaba en la calle me di cuenta de que olvidé mi billetera y en medio del camino me encuentro justamente un helado tirado jajaja',
-      imageUrl: '/Helado.jpeg',
-      date: '2 de Enero 2025 - 10:20 AM',
-      likes: 2,
-      comments: 3,
-    },
-  ]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [posts,setPosts] = useState<Post[]>([]);
+  // Cargar datos desde la API
+ useEffect(() => {
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get('http://localhost:8070/publications/all');
+      
+      // Transformamos los datos a la estructura esperada
+      const formattedEmotions = response.data.map((item: any) => ({
+        id: item.id,
+        author: item.author, // Ajustar clave si es diferente
+        content: item.content,
+        imageUrl: item.fileUrl, // Ajustar clave si es diferente
+        date: item.date,
+        location: item.location
+      }));
+
+      setPosts(formattedEmotions);
+    } catch (error) {
+      console.error('Error al obtener las emociones:', error);
+    }
+  };
+ 
+  fetchPosts();
+}, []);
 
   return (
     <>
