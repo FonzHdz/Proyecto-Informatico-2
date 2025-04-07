@@ -1,6 +1,5 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
-import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.Emotion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -10,8 +9,5 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<Post,UUID> {
 
     Optional<List<Post>> findAllByFamilyId(UUID familyId);
-    Optional<List<Post>> findAllByUserId(UUID userId);
-    List<Post> findByUserIdOrderByCreationDateDesc(UUID userId);
-    List<Post> findByFamilyIdOrderByCreationDateDesc(UUID familyId);
-    boolean existsById(UUID postId);
+    Optional<List<Post>> findAllById(UUID id);
 }

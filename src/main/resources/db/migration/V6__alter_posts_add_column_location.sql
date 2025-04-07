@@ -1,2 +1,0 @@
-ALTER TABLE posts
-    ADD COLUMN location VARCHAR(255);
