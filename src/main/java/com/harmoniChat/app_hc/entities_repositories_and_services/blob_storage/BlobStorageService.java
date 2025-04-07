@@ -136,4 +136,59 @@ public class BlobStorageService {
         containerClient.getBlobClient(fileName)
                 .upload(file.getInputStream(), file.getSize(), true);
     }
+
+    public void deleteFile(String fileUrl, BlobContainerType containerType) throws IOException {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return; // No hay archivo para eliminar
+        }
+
+        try {
+            // Extraer el nombre del archivo de la URL
+            String fileName = extractFileNameFromUrl(fileUrl);
+            if (fileName == null || fileName.isEmpty()) {
+                throw new IllegalArgumentException("URL de archivo no válida");
+            }
+
+            String containerName = getContainerName(containerType);
+            BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+
+            if (!containerClient.exists()) {
+                throw new IOException("El contenedor no existe: " + containerName);
+            }
+
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+
+            if (blobClient.exists()) {
+                blobClient.delete();
+            } else {
+                throw new IOException("El archivo no existe en el almacenamiento: " + fileName);
+            }
+        } catch (BlobStorageException e) {
+            throw new IOException("Error al eliminar archivo del blob storage: " + e.getMessage(), e);
+        }
+    }
+
+    private String extractFileNameFromUrl(String fileUrl) {
+        try {
+            // Eliminar parámetros de consulta (SAS token si existe)
+            String baseUrl = fileUrl.split("\\?")[0];
+
+            // Extraer la parte después del nombre del contenedor
+            String containerPrefix = "blob.core.windows.net/" + getContainerName(BlobContainerType.POSTS) + "/";
+            int containerIndex = baseUrl.indexOf(containerPrefix);
+
+            if (containerIndex == -1) {
+                containerPrefix = "blob.core.windows.net/" + getContainerName(BlobContainerType.EMOTIONS) + "/";
+                containerIndex = baseUrl.indexOf(containerPrefix);
+
+                if (containerIndex == -1) {
+                    return null;
+                }
+            }
+
+            return baseUrl.substring(containerIndex + containerPrefix.length());
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

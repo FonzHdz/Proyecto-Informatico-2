@@ -128,4 +128,8 @@ public class UserService {
     public boolean existsByDocumentNumber(String documentType, String documentNumber) {
         return userRepository.existsByDocumentTypeAndDocumentNumber(documentType, documentNumber);
     }
+
+    public List<User> findByFamilyId(Family familyId) {
+        return userRepository.findByFamilyId(familyId);
+    }
 }

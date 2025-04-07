@@ -17,13 +17,20 @@ public class PostService {
     private final PostRepository postRepository;
     private final BlobStorageService blobStorageService;
 
-
-    public void createNew(Post post, MultipartFile file) throws IOException {
+    public Post createNew(Post post, MultipartFile file) throws IOException {
         if (file != null && !file.isEmpty()) {
             String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.POSTS);
             post.setFilesURL(fileUrl);
         }
-        postRepository.save(post);
+        return postRepository.save(post);
+    }
+
+    public List<Post> findAllByUserId(UUID userId) {
+        return postRepository.findByUserIdOrderByCreationDateDesc(userId);
+    }
+
+    public List<Post> findAllByFamilyId(UUID familyId) {
+        return postRepository.findByFamilyIdOrderByCreationDateDesc(familyId);
     }
 
     public Post create (Post post){
@@ -42,4 +49,16 @@ public class PostService {
     public Optional<List<Post>> getAllPostById (UUID userId){
         return postRepository.findAllByUserId(userId);}
 
+
+    public boolean existsById(UUID id) {
+        return postRepository.existsById(id);
+    }
+
+    public Optional<Post> findById(UUID id) {
+        return postRepository.findById(id);
+    }
+
+    public void deleteById(UUID id) {
+        postRepository.deleteById(id);
+    }
 }

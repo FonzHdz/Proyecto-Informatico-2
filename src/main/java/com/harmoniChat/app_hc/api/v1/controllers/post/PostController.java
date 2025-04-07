@@ -1,26 +1,26 @@
 package com.harmoniChat.app_hc.api.v1.controllers.post;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.post.Post;
 import com.harmoniChat.app_hc.entities_repositories_and_services.post.PostService;
-//import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
-//import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserRepository;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserService;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.coyote.http11.filters.SavedRequestInputFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.core.Authentication;
-//import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,126 +29,199 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
-    private final UserService userService;
+    private final BlobStorageService blobStorageService;
     private final ObjectMapper objectMapper;
-/*
-    @PostMapping("/new/{userId}/{familyId}")
-    public ResponseEntity<?> createPost(
-            @PathVariable UUID userId,
-            @PathVariable UUID familyId,
+    private final UserService userService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponse2> createPost(
             @RequestPart("post") String postJson,
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         try {
             PostRequest request = objectMapper.readValue(postJson, PostRequest.class);
 
+            // Validación básica
+            if (request.description() == null || request.description().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Subir imagen si existe
+            String fileUrl = null;
+            if (file != null && !file.isEmpty()) {
+                fileUrl = blobStorageService.uploadFile(file, BlobContainerType.POSTS);
+            }
+
+            // Crear y guardar el post
             Post newPost = Post.builder()
-                    .userId(userId)
-                    .familyId(familyId)
                     .description(request.description())
-                    .filesURL(request.filesURL())
+                    .location(request.location())
+                    .userId(UUID.fromString(request.userId()))
+                    .familyId(UUID.fromString(request.familyId()))
+                    .filesURL(fileUrl)
                     .build();
 
-            postService.createNew(newPost, file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(newPost);
+            Post savedPost = postService.createNew(newPost, file);
 
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "error", "Error al procesar la solicitud",
-                            "details", e.getMessage()
-                    ));
+            // Obtener información del usuario
+            User author = userService.findById(savedPost.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Convertir a DTO de respuesta completo
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
+            PostResponse fullResponse = PostResponse.builder()
+                    .id(savedPost.getId())
+                    .authorName(author.getFirstName() + " " + author.getLastName())
+                    .content(savedPost.getDescription())
+                    .filesURL(savedPost.getFilesURL())
+                    .date(savedPost.getCreationDate().format(formatter))
+                    .location(savedPost.getLocation())
+                    .likes(0) // Puedes ajustar estos valores según tu lógica
+                    .comments(0)
+                    .userId(savedPost.getUserId())
+                    .build();
+
+            // Enviar la respuesta completa por WebSocket
+            messagingTemplate.convertAndSend("/topic/posts", fullResponse);
+
+            // También puedes mantener el response original para la respuesta HTTP si es necesario
+            PostResponse2 response = new PostResponse2(
+                    savedPost.getId(),
+                    savedPost.getDescription(),
+                    savedPost.getLocation(),
+                    savedPost.getFilesURL(),
+                    savedPost.getCreationDate().format(formatter),
+                    savedPost.getUserId(),
+                    savedPost.getFamilyId()
+            );
+
+            System.out.println("Datos recibidos:");
+            System.out.println("Descripción: " + request.description());
+            System.out.println("Ubicación: " + request.location());
+            System.out.println("User ID: " + request.userId());
+            System.out.println("Family ID: " + request.familyId());
+            System.out.println("Tiene archivo: " + (file != null && !file.isEmpty()));
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }*/
-
-    public record PostRequest(// Nombre de la emoción (ej: "Alegría")
-            String description,  // Descripción textual
-            String location
-    ) {}
-
-    public record PostResponse2(// Igual que en request
-            String description,   // Igual que en request
-            String filesURL,      // URL de imagen (puede ser null)
-            String creationDate,// Fecha como String
-            String location
-    ) {}
-
-    @PostMapping("/new")
-    public ResponseEntity<PostResponse2> createEmotion(@RequestBody PostRequest request) {
-        // Validación básica de los campos requeridos
-        if (request.description() == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        // Crear y guardar la nueva emoción
-        Post newPost = Post.builder()
-                .description(request.description())
-                .location(request.location())// Descripción del usuario
-                .userId(UUID.fromString("85228930-d0f5-4bee-8e7d-c0aa15ad24b3")) // Convertir String a UUID
-                .familyId(UUID.fromString("07e1a1bd-937a-43ca-a0a9-fbf89f394d00"))
-                .filesURL(null)                       // Opcional, puede ser null
-                .build();
-
-
-        Post savedPost = postService.create(newPost);
-
-        // Convertir a DTO de respuesta
-        PostResponse2 response = new PostResponse2(
-                savedPost.getLocation(),
-                savedPost.getDescription(),
-                savedPost.getFilesURL(),  // Puede ser null
-                savedPost.getCreationDate().toString()
-        );
-
-        return ResponseEntity.ok(response);
     }
 
-    @Builder
-    record PostResponse(
-            UUID id,
-            String author, // Coincide con lo esperado en el frontend
-            String date,
-            String fileUrl, // Coincide con lo esperado en el frontend
-            String content,
-            String location
-    ) {}
-
-    private PostResponse convertToResponse(Post post) {
-        Optional<User> user = userService.findById(UUID.fromString("52ca86a6-296d-4d7e-9eb4-f40915b7da52"));
-        String userName = user.get().getFirstName();
-        return PostResponse.builder()
-                .id(post.getId())
-                .author(userName)  // "name" en la entidad → "emocion" en el DTO
-                .date(post.getCreationDate().toString())
-                .fileUrl(post.getFilesURL())  // "filesURL" en la entidad → "fileUrl" en el DTO
-                .content(post.getDescription())
-                .location(post.getLocation())
-                .build();
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<List<PostResponse>> getAllEmotions() {
-        List<Post> emotions = postService.getAllPosts();
-        List<PostResponse> response = emotions.stream()
-                .map(this::convertToResponse)
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PostResponse>> getPostsByUser(@PathVariable UUID userId) {
+        List<Post> posts = postService.findAllByUserId(userId);
+        List<PostResponse> response = posts.stream()
+                .map(this::convertToPostResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/family/{familyId}")
-    public ResponseEntity<List<Post>> findByFamily(@PathVariable UUID familyId) {
-        Optional<List<Post>> optionalPosts = postService.getAllPostByFamilyId(familyId);
-        return optionalPosts.filter(posts -> !posts.isEmpty())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
+    public ResponseEntity<List<PostResponse>> getPostsByFamily(@PathVariable UUID familyId) {
+        List<Post> posts = postService.findAllByFamilyId(familyId);
+        List<PostResponse> response = posts.stream()
+                .map(this::convertToPostResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Post>> findByUser(@PathVariable UUID userId) {
-        Optional<List<Post>> optionalPosts = postService.getAllPostById(userId);
-        return optionalPosts.filter(posts -> !posts.isEmpty())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
+    private PostResponse convertToPostResponse(Post post) {
+        User author = userService.findById(post.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
+        return PostResponse.builder()
+                .id(post.getId())
+                .authorName(author.getFirstName() + " " + author.getLastName())
+                .content(post.getDescription())
+                .filesURL(post.getFilesURL())
+                .date(post.getCreationDate().format(formatter))
+                .location(post.getLocation())
+                .likes(0)
+                .comments(0)
+                .userId(post.getUserId())
+                .build();
     }
 
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable String id) {  // Cambiado a String
+        try {
+            UUID uuid = UUID.fromString(id);  // Convertir explícitamente
+            Post post = postService.findById(uuid).orElse(null);
+
+            if (post == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            if (post.getFilesURL() != null && !post.getFilesURL().isEmpty()) {
+                blobStorageService.deleteFile(post.getFilesURL(), BlobContainerType.POSTS);
+            }
+
+            postService.deleteById(uuid);
+
+            // Notificar a los clientes sobre la eliminación
+            messagingTemplate.convertAndSend("/topic/postDeleted", id);
+
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Builder
+    public record PostResponse(
+            UUID id,
+            String authorName,
+            String content,
+            String filesURL,
+            String date,
+            String location,
+            Integer likes,
+            Integer comments,
+            UUID userId
+    ) {}
+
+    private PostResponse convertToResponse(Post post) {
+        // Obtener información del usuario
+        User author = userService.findById(post.getUserId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
+        return PostResponse.builder()
+                .id(post.getId())
+                .authorName(author.getFirstName() + " " + author.getLastName())
+                .date(post.getCreationDate().format(formatter))
+                .filesURL(post.getFilesURL())
+                .content(post.getDescription())
+                .location(post.getLocation())
+                .userId(post.getUserId())
+                .build();
+    }
+
+    // Registros (DTOs) para request/response
+    public record PostRequest(
+            String description,
+            String location,
+            String userId,
+            String familyId
+    ) {}
+
+    public record PostResponse2(
+            UUID id,
+            String description,
+            String location,
+            String filesURL,
+            String creationDate,
+            UUID userId,
+            UUID familyId
+    ) {}
 }

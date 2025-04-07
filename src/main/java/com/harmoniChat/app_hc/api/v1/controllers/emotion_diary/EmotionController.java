@@ -131,26 +131,23 @@ public class EmotionController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteEmotion(@PathVariable UUID id) {
+    public ResponseEntity<Void> deletePost(@PathVariable UUID id) {
         try {
-            // Verificar si la emoción existe
-            boolean exists = emotionService.existsById(id);
+            Emotion emotion = emotionService.findById(id).orElse(null);
 
-            if (!exists) {
+            if (emotion == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            // Eliminar el archivo asociado del blob storage si existe
-            Emotion emotion = emotionService.findById(id).orElse(null);
-            if (emotion != null && emotion.getFilesURL() != null) {
-                //blobStorageService.deleteFile(emotion.getFilesURL(), BlobContainerType.EMOTIONS);
+            // Eliminar el archivo asociado si existe
+            if (emotion.getFilesURL() != null && !emotion.getFilesURL().isEmpty()) {
+                blobStorageService.deleteFile(emotion.getFilesURL(), BlobContainerType.EMOTIONS);
             }
 
-            // Eliminar la emoción de la base de datos
             emotionService.deleteById(id);
-
             return ResponseEntity.noContent().build();
-        } catch (Exception e) {
+        } catch (IOException e) {
+            // Log the error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
