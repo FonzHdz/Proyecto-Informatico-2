@@ -1,4 +1,4 @@
-package com.harmoniChat.app_hc.entities_repositories_and_services.post;
+package com.harmoniChat.app_hc.entities_repositories_and_services.family;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,17 +8,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 @Getter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "posts")
-public class Post {
+@Table(name = "families")
+public class Family {
 
-    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -26,28 +24,26 @@ public class Post {
 
     @Getter
     @Setter
-    @Column(name = "user_id")
-    private UUID userId;
+    @Column(name = "name", nullable = false)
+    @Builder.Default
+    private String name = "Nueva Familia";
 
     @Getter
     @Setter
-    @Column(name = "family_id")
-    private UUID familyId;
+    @Column(name = "photo_url", nullable = false)
+    @Builder.Default
+    private String photoURL = "default-family.jpg";
 
     @Getter
     @Setter
-    @Column(name = "description")
-    private String description;
+    @Column(name = "motto", nullable = false)
+    @Builder.Default
+    private String motto = "Familia unida";
 
     @Getter
     @Setter
-    @Column(name = "location")
-    private String location;
-
-    @Getter
-    @Setter
-    @Column(name = "files_url")
-    private String filesURL;
+    @Column(name = "invite_code", nullable = false, unique = true)
+    private String inviteCode;
 
     @CreationTimestamp
     @Getter
@@ -60,5 +56,4 @@ public class Post {
     @Setter
     @Column(name = "last_modified_date")
     private LocalDateTime lastModifiedDate;
-
 }
