@@ -18,7 +18,7 @@ import java.util.UUID;
 @Table(name = "posts")
 public class Post {
 
-
+    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -38,6 +38,11 @@ public class Post {
     @Setter
     @Column(name = "description")
     private String description;
+
+    @Getter
+    @Setter
+    @Column(name = "location")
+    private String location;
 
     @Getter
     @Setter
