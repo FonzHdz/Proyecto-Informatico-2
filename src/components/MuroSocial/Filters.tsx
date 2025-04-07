@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const FiltersContainer = styled.div`
@@ -7,7 +7,7 @@ const FiltersContainer = styled.div`
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 320px;
-  position: sticky;
+  position: fixed;
   top: 80px;
   height: fit-content;
   z-index: 99;
@@ -108,62 +108,164 @@ const ClearButton = styled.button`
   }
 `;
 
-interface FiltersProps {
-  onFilterChange: (filters: any) => void;
+interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName: string;
 }
 
-const Filters: React.FC<FiltersProps> = ({ onFilterChange }) => {
+interface FiltersProps {
+  onFilterChange: (filters: any) => void;
+  familyMembers: FamilyMember[];
+  currentUserId: string;
+}
+
+const Filters: React.FC<FiltersProps> = ({ 
+  onFilterChange, 
+  familyMembers,
+  currentUserId
+}) => {
+  const [filters, setFilters] = useState({
+    author: '',
+    dateFrom: '',
+    dateTo: '',
+    mediaType: ''
+  });
+
+  useEffect(() => {
+    onFilterChange(filters);
+  }, [filters, onFilterChange]);
+
+  const handleAuthorChange = (authorId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      author: authorId
+    }));
+  };
+
+  const handleDateChange = (type: 'from' | 'to', value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [`date${type.charAt(0).toUpperCase() + type.slice(1)}`]: value
+    }));
+  };
+
+  const handleMediaTypeChange = (type: string) => {
+    setFilters(prev => ({
+      ...prev,
+      mediaType: type
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      author: '',
+      dateFrom: '',
+      dateTo: '',
+      mediaType: ''
+    });
+  };
+
   return (
     <FiltersContainer className="internal-scroll">
       <FiltersHeader>Filtros</FiltersHeader>
       
       <FilterSection>
         <FilterTitle>Publicado por</FilterTitle>
+        {/* Opción "Yo" */}
         <FilterOption>
-          <RadioButton type="radio" name="author" id="mama" />
-          <Label htmlFor="mama">Mamá</Label>
-        </FilterOption>
-        <FilterOption>
-          <RadioButton type="radio" name="author" id="papa" />
-          <Label htmlFor="papa">Papá</Label>
-        </FilterOption>
-        <FilterOption>
-          <RadioButton type="radio" name="author" id="hermano" />
-          <Label htmlFor="hermano">Hermano</Label>
-        </FilterOption>
-        <FilterOption>
-          <RadioButton type="radio" name="author" id="yo" />
+          <RadioButton 
+            type="radio" 
+            name="author" 
+            id="yo" 
+            checked={filters.author === 'yo'}
+            onChange={() => handleAuthorChange('yo')}
+          />
           <Label htmlFor="yo">Yo</Label>
         </FilterOption>
+        
+        {/* Opciones para cada miembro de la familia */}
+        {familyMembers.map(member => (
+          member.id !== currentUserId && (
+            <FilterOption key={member.id}>
+              <RadioButton 
+                type="radio" 
+                name="author" 
+                id={`member-${member.id}`}
+                checked={filters.author === member.id}
+                onChange={() => handleAuthorChange(member.id)}
+              />
+              <Label htmlFor={`member-${member.id}`}>
+                {member.firstName} {member.lastName}
+              </Label>
+            </FilterOption>
+          )
+        ))}
       </FilterSection>
 
       <FilterSection>
         <FilterTitle>Fecha publicación</FilterTitle>
         <DateLabel>Desde:</DateLabel>
-        <DateInput type="date" />
+        <DateInput 
+          type="date" 
+          value={filters.dateFrom}
+          onChange={(e) => handleDateChange('from', e.target.value)}
+        />
         <DateLabel>Hasta:</DateLabel>
-        <DateInput type="date" />
+        <DateInput 
+          type="date" 
+          value={filters.dateTo}
+          onChange={(e) => handleDateChange('to', e.target.value)}
+        />
       </FilterSection>
 
       <FilterSection>
         <FilterTitle>Tipo de multimedia</FilterTitle>
         <FilterOption>
-          <RadioButton type="radio" name="media" id="foto" />
+          <RadioButton 
+            type="radio" 
+            name="media" 
+            id="foto" 
+            checked={filters.mediaType === 'foto'}
+            onChange={() => handleMediaTypeChange('foto')}
+          />
           <Label htmlFor="foto">Foto</Label>
         </FilterOption>
         <FilterOption>
-          <RadioButton type="radio" name="media" id="video" />
+          <RadioButton 
+            type="radio" 
+            name="media" 
+            id="video" 
+            checked={filters.mediaType === 'video'}
+            onChange={() => handleMediaTypeChange('video')}
+          />
           <Label htmlFor="video">Video</Label>
         </FilterOption>
         <FilterOption>
-          <RadioButton type="radio" name="media" id="gif" />
+          <RadioButton 
+            type="radio" 
+            name="media" 
+            id="gif" 
+            checked={filters.mediaType === 'gif'}
+            onChange={() => handleMediaTypeChange('gif')}
+          />
           <Label htmlFor="gif">Gif</Label>
+        </FilterOption>
+        <FilterOption>
+          <RadioButton 
+            type="radio" 
+            name="media" 
+            id="none" 
+            checked={filters.mediaType === 'none'}
+            onChange={() => handleMediaTypeChange('none')}
+          />
+          <Label htmlFor="none">Sin multimedia</Label>
         </FilterOption>
       </FilterSection>
 
-      <ClearButton>Limpiar</ClearButton>
+      <ClearButton onClick={handleClearFilters}>Limpiar</ClearButton>
     </FiltersContainer>
   );
 };
 
-export default Filters; 
+export default Filters;

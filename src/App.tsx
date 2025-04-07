@@ -5,6 +5,7 @@ import CreatePost from './components/MuroSocial/CreatePost';
 import Filters from './components/MuroSocial/Filters';
 import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
 import Chat from './components/Chat/Chat';
+import axios from 'axios';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -153,6 +154,53 @@ const CreateButton = styled.button`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  height: calc(100vh - 80px); /* Resta la altura del header */
+  margin-top: -15px; /* Compensa el padding del header */
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+interface TaggedUser {
+  id: string;
+  name: string;
+}
+
+interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface Post {
+  id: string;
+  authorName: string;
+  content: string;
+  filesURL: string;
+  date: string;
+  likes: number;
+  comments: number;
+  location?: string;
+  tags?: TaggedUser[];
+  userId: string;
+}
+
 interface User {
   id: string;
   firstName: string;
@@ -167,6 +215,109 @@ function App() {
   const [activeSection, setActiveSection] = useState('diary');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    author: '',
+    dateFrom: '',
+    dateTo: '',
+    mediaType: ''
+  });
+
+  // Función para obtener miembros de la familia
+  const fetchFamilyMembers = async (familyId: string) => {
+    try {
+      setIsLoadingMembers(true);
+      setMembersError(null);
+      const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+      setFamilyMembers(response.data);
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+      setMembersError('No se pudieron cargar los miembros de la familia');
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  const parseDate = (dateString: string) => {
+    if (!dateString) return new Date();
+    
+    const [datePart, timePart] = dateString.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const [time, modifier] = timePart.split(' ');
+    let [hours, minutes] = time.split(':');
+    
+    if (modifier === 'p. m.' && hours !== '12') {
+      hours = String(Number(hours) + 12);
+    }
+    if (modifier === 'a. m.' && hours === '12') {
+      hours = '00';
+    }
+  
+    return new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
+  };
+
+  // Función para aplicar filtros
+  const applyFilters = (posts: Post[], filters: any, currentUserId: string, familyMembers: FamilyMember[]): Post[] => {
+    let filteredPosts = [...posts];
+  
+    // Filtro por autor
+    if (filters.author) {
+      if (filters.author === 'yo') {
+        filteredPosts = filteredPosts.filter(post => post.userId === currentUserId);
+      } else {
+        filteredPosts = filteredPosts.filter(post => {
+          const member = familyMembers.find(m => m.id === filters.author);
+          return member && post.userId === member.id;
+        });
+      }
+    }
+  
+    // Filtro por fecha
+    if (filters.dateFrom || filters.dateTo) {
+      filteredPosts = filteredPosts.filter(post => {
+        const postDate = parseDate(post.date);
+        const fromDate = filters.dateFrom ? new Date(filters.dateFrom) : null;
+        const toDate = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59') : null;
+  
+        if (fromDate && postDate < fromDate) return false;
+        if (toDate && postDate > toDate) return false;
+        return true;
+      });
+    }
+  
+    // Filtro por tipo de multimedia
+    if (filters.mediaType) {
+      filteredPosts = filteredPosts.filter(post => {
+        const cleanUrl = post.filesURL?.split('?')[0]; // Eliminar query params si existe
+        const extension = cleanUrl?.split('.').pop()?.toLowerCase();
+        
+        switch (filters.mediaType) {
+          case 'foto':
+            return ['jpg', 'jpeg', 'png', 'gif'].includes(extension || '');
+          case 'video':
+            return ['mp4', 'mov', 'avi'].includes(extension || '');
+          case 'gif':
+            return extension === 'gif';
+          case 'none':
+            return !post.filesURL;
+          default:
+            return true;
+        }
+      });
+    }
+  
+    return filteredPosts;
+  };
+
+  // Efecto para cargar miembros de la familia cuando cambia el usuario
+  useEffect(() => {
+    if (currentUser?.familyId) {
+      fetchFamilyMembers(currentUser.familyId);
+    }
+  }, [currentUser]);
 
   const getValidUser = (userString: string | null) => {
     if (!userString) return null;
@@ -208,8 +359,8 @@ function App() {
     checkAuth();
   }, []);
 
-  const handleCreatePost = (post: any) => {
-    console.log('New post:', post);
+  const handleCreatePost = () => {
+
   };
 
   const handleSectionChange = (section: string) => {
@@ -219,21 +370,15 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('harmonichat_user')
     setCurrentUser(null);
-    window.location.href = 'http://localhost:3000'; // Redirige al frontend de autenticación
+    window.location.href = 'http://localhost:3000';
   };
 
   const renderContent = () => {
     if (isCheckingAuth || !currentUser) {
       return (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          width: '100vw'
-        }}>
-          <div>Cargando aplicación...</div>
-        </div>
+        <LoadingContainer>
+          <LoadingSpinner />
+        </LoadingContainer>
       );
     }
   
@@ -241,18 +386,28 @@ function App() {
       case 'diary':
         return <EmotionDiary userId={currentUser.id} />;
       case 'posts':
+        const filteredPosts = applyFilters(posts, filters, currentUser.id, familyMembers);
         return (
           <>
             <ContentArea>
-              <Posts/>
+              <Posts 
+                userId={currentUser.id} 
+                familyId={currentUser.familyId}
+                posts={filteredPosts}  // Pasar los posts filtrados
+                setPosts={setPosts}
+                currentUserName={`${currentUser.firstName} ${currentUser.lastName}`}
+              />
             </ContentArea>
             <FiltersArea>
-              <Filters onFilterChange={(filters) => console.log('Filters:', filters)} />
+              <Filters 
+                onFilterChange={setFilters}
+                familyMembers={familyMembers}
+                currentUserId={currentUser.id}
+              />
             </FiltersArea>
           </>
         );
       case 'chat':
-        console.log('User before chat:', currentUser);
         return <Chat user={currentUser} />;
       default:
         return <div>Sección en construcción</div>;
@@ -348,12 +503,14 @@ function App() {
           <i className="fi fi-rr-plus"></i>
         </CreateButton>
       )}
-
       {currentUser && (
         <CreatePost
           isOpen={isCreatePostOpen}
           onClose={() => setIsCreatePostOpen(false)}
           onSubmit={handleCreatePost}
+          userId={currentUser.id}
+          familyId={currentUser.familyId}
+          familyMembers={familyMembers}
         />
       )}
     </AppContainer>

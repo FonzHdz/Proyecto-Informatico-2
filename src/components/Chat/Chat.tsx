@@ -87,10 +87,27 @@ const FileInputButton = styled.button`
   }
 `;
 
-const LoadingIndicator = styled.div`
-  padding: 20px;
-  text-align: center;
-  color: #666;
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  height: calc(100vh - 80px); /* Resta la altura del header */
+  margin-top: -15px; /* Compensa el padding del header */
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const Chat: React.FC<{ user: User }> = ({ user }) => {
@@ -290,7 +307,9 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
             
             <MessagesContainer>
                 {isLoading ? (
-                    <LoadingIndicator>Cargando mensajes...</LoadingIndicator>
+                    <LoadingContainer>
+                        <LoadingSpinner />
+                    </LoadingContainer>
                 ) : messages.length === 0 ? (
                     <NoMessages>No hay mensajes aún. ¡Envía el primero!</NoMessages>
                 ) : (

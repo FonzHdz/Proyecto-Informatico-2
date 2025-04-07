@@ -91,6 +91,9 @@ const ActionButton = styled.button`
 
   &:hover {
     color: #4a90e2;
+    .fi {
+      transform: scale(1.1);
+    }
   }
 
   i {
@@ -124,6 +127,39 @@ const CreateButton = styled.button`
   i {
     font-size: 24px;
     color: white;
+  }
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  height: calc(100vh - 80px); /* Resta la altura del header */
+  margin-top: -15px; /* Compensa el padding del header */
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const DeleteButton = styled(ActionButton)`
+  &:hover {
+    color: #ff4757;
+    
+    .fi {
+      transform: scale(1.1);
+    }
   }
 `;
 
@@ -236,9 +272,11 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
     }
   };
 
-  if (isLoading) {
-    return <div>Cargando emociones...</div>;
-  }
+  if (isLoading) return (
+    <LoadingContainer>
+      <LoadingSpinner />
+    </LoadingContainer>
+  );
 
   if (error) {
     return <div>{error}</div>;
@@ -268,14 +306,14 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
                 <ActionButton>
                   <i className="fi fi-rr-edit"></i>
                 </ActionButton>
-                <ActionButton onClick={() => handleDeleteEmotion(entry.id)}>
+                <DeleteButton onClick={() => handleDeleteEmotion(entry.id)}>
                   <i className="fi fi-rr-trash"></i>
-                </ActionButton>
+                </DeleteButton>
               </ActionButtons>
             </EmotionCard>
           ))
         ) : (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
+          <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
             No hay emociones registradas
           </div>
         )}

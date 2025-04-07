@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import axios  from 'axios';
 
@@ -208,31 +208,60 @@ const Button = styled.button`
   }
 `;
 
+interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 interface CreatePostProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (post: any) => void;
+  userId: string;
+  familyId: string;
+  familyMembers: FamilyMember[];
 }
 
-// Lista simulada de usuarios del chat familiar
-const familyMembers = [
-  { id: 1, name: 'Mamá', username: 'mama' },
-  { id: 2, name: 'Papá', username: 'papa' },
-  { id: 3, name: 'Hermano', username: 'hermano' },
-  { id: 4, name: 'Hermana', username: 'hermana' },
-];
-
-const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+const CreatePost: React.FC<CreatePostProps> = ({ 
+  isOpen, 
+  onClose, 
+  userId,
+  familyId,
+}) => {
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
+  
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [location, setLocation] = useState('');
   const [mentionSearch, setMentionSearch] = useState('');
   const [showMentions, setShowMentions] = useState(false);
-  const [selectedMentions, setSelectedMentions] = useState<typeof familyMembers[0][]>([]);
+  const [selectedMentions, setSelectedMentions] = useState<FamilyMember[]>([]);
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen && familyId) {
+      const fetchFamilyMembers = async () => {
+        try {
+          setIsLoadingMembers(true);
+          setMembersError(null);
+          const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+          setFamilyMembers(response.data);
+        } catch (err) {
+          console.error('Error al obtener miembros de la familia:', err);
+          setMembersError('No se pudieron cargar los miembros de la familia');
+        } finally {
+          setIsLoadingMembers(false);
+        }
+      };
+      
+      fetchFamilyMembers();
+    }
+  }, [isOpen, familyId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -248,7 +277,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
     setShowMentions(true);
   };
 
-  const handleSelectMention = (member: typeof familyMembers[0]) => {
+  const handleSelectMention = (member: FamilyMember) => {
     if (!selectedMentions.find(m => m.id === member.id)) {
       setSelectedMentions([...selectedMentions, member]);
     }
@@ -256,18 +285,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
     setShowMentions(false);
   };
 
-  const handleRemoveMention = (memberId: number) => {
+  const handleRemoveMention = (memberId: string) => {
     setSelectedMentions(selectedMentions.filter(m => m.id !== memberId));
   };
 
   const filteredMembers = familyMembers.filter(
-    member => member.name.toLowerCase().includes(mentionSearch.toLowerCase()) &&
+    member => `${member.firstName} ${member.lastName}`.toLowerCase()
+      .includes(mentionSearch.toLowerCase()) &&
     !selectedMentions.find(m => m.id === member.id)
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if  (!description) {
+    if (!description) {
       setError('Por favor escribe una descripción');
       return;
     }
@@ -276,29 +306,53 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
     setError('');
 
     try {
-
-      // Datos que se enviarán en el body de la solicitud
-      const requestBody = {
-        description: description,   // Descripción del usuario
-        location: location,
+      const formData = new FormData();
+      const postData = {
+        description,
+        location,
+        userId,
+        familyId
       };
 
-      const response = await axios.post('http://localhost:8070/publications/new', requestBody, {
+      formData.append('post', new Blob([JSON.stringify(postData)], {
+        type: 'application/json'
+      }));
+      
+      if (image) {
+        formData.append('file', image);
+      }
+
+      const response = await axios.post('http://localhost:8070/publications/new', formData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log('publicacion Creada', response.data);
-      
-      // Limpiamos el formulario
+      console.log('Enviando datos:', {
+        description,
+        location,
+        userId,
+        familyId,
+        hasImage: !!image
+      });
+  
+      console.log('Respuesta completa del servidor:', response.data);
+  
+      if (!response.data.id) {
+        throw new Error('El servidor no devolvió un ID válido');
+      }
+  
+      // Limpiar formulario
       setLocation('');
       setDescription('');
       setImage(null);
-      setIsCreateOpen(false);
-
+      setImagePreviewUrl('');
+      setSelectedMentions([]);
+      
+      onClose();
+  
     } catch (err) {
-      setError('Error al crear la publicacion. Por favor intenta nuevamente.');
+      setError('Error al crear la publicación. Por favor intenta nuevamente.');
       console.error('Error:', err);
     } finally {
       setIsLoading(false);
@@ -311,21 +365,26 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
     <PopupOverlay onClick={onClose}>
       <PopupContent onClick={e => e.stopPropagation()}>
         <h2>Crear nueva publicación</h2>
+        {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        
         <Form onSubmit={handleSubmit}>
           <FormSection>
-            <FormLabel htmlFor="image-input">Imagen</FormLabel>
+            <FormLabel htmlFor="image-input">Multimedia</FormLabel>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleImageChange}
               style={{ display: 'none' }}
               id="image-input"
             />
             <label htmlFor="image-input">
               <ImagePreview
-                style={imagePreviewUrl ? { backgroundImage: `url(${imagePreviewUrl})` } : {}}
+                style={imagePreviewUrl ? { 
+                  backgroundImage: `url(${imagePreviewUrl})`,
+                  color: 'transparent'
+                } : {}}
               >
-                {!imagePreviewUrl && 'Haz clic para agregar una imagen'}
+                {!imagePreviewUrl && 'Haz clic para agregar un archivo multimedia'}
               </ImagePreview>
             </label>
           </FormSection>
@@ -352,30 +411,40 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
           
           <FormSection>
             <FormLabel htmlFor="mentions">Etiquetar personas</FormLabel>
+            {membersError && <small style={{ color: 'red' }}>{membersError}</small>}
             <MentionsContainer>
               <Input
                 id="mentions"
-                placeholder="Buscar personas para etiquetar"
+                placeholder={isLoadingMembers ? "Cargando miembros..." : "Buscar personas para etiquetar"}
                 value={mentionSearch}
                 onChange={handleMentionSearch}
                 onFocus={() => setShowMentions(true)}
                 onBlur={() => setTimeout(() => setShowMentions(false), 200)}
+                disabled={isLoadingMembers}
               />
-              <MentionsDropdown isVisible={showMentions && filteredMembers.length > 0}>
-                {filteredMembers.map(member => (
-                  <MentionOption
-                    key={member.id}
-                    onClick={() => handleSelectMention(member)}
-                  >
-                    <MentionAvatar>{member.name[0]}</MentionAvatar>
-                    <MentionName>{member.name}</MentionName>
-                  </MentionOption>
-                ))}
-              </MentionsDropdown>
+              
+              {!isLoadingMembers && (
+                <MentionsDropdown isVisible={showMentions && filteredMembers.length > 0}>
+                  {filteredMembers.map(member => (
+                    <MentionOption
+                      key={member.id}
+                      onClick={() => handleSelectMention(member)}
+                    >
+                      <MentionAvatar>
+                        {member.firstName[0]}{member.lastName[0]}
+                      </MentionAvatar>
+                      <MentionName>
+                        {member.firstName} {member.lastName}
+                      </MentionName>
+                    </MentionOption>
+                  ))}
+                </MentionsDropdown>
+              )}
+              
               <SelectedMentions>
                 {selectedMentions.map(member => (
                   <MentionTag key={member.id}>
-                    {member.name}
+                    {member.firstName}
                     <button 
                       type="button"
                       onClick={() => handleRemoveMention(member.id)}
@@ -388,11 +457,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onSubmit }) =>
             </MentionsContainer>
           </FormSection>
           
-          <Button type="submit">Publicar</Button>
+          <Button type="submit" disabled={isLoading || isLoadingMembers}>
+            {isLoading ? 'Publicando...' : 'Publicar'}
+          </Button>
         </Form>
       </PopupContent>
     </PopupOverlay>
   );
 };
 
-export default CreatePost; 
+export default CreatePost;
