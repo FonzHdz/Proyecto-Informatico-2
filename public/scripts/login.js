@@ -93,13 +93,11 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     
-    // Validación básica de campos
     if (!email || !password) {
         showErrorToast('Por favor completa todos los campos');
         return;
     }
     
-    // Mostrar loader
     const loader = Swal.fire({
         title: 'Iniciando sesión',
         html: 'Validando tus credenciales...',
@@ -108,12 +106,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             Swal.showLoading();
         },
         background: '#f8fafc',
-        backdrop: `
-            rgba(0,0,0,0.4)
-            url("/Imagenes/loading.gif")
-            center top
-            no-repeat
-        `
+        backdrop: 'rgba(0,0,0,0.4)'
     });
     
     try {
@@ -136,17 +129,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             return;
         }
         
-        // Cerrar loader
         await loader.close();
         
-        // Mostrar éxito
-        showSuccessToast(`Bienvenido ${data.firstName}!`);
+        // Asegúrate de acceder a data.user.firstName
+        showSuccessToast(`Bienvenido ${data.user.firstName}!`);
         
-        // Almacenar y redirigir
-        localStorage.setItem('harmonichat_user', JSON.stringify(data));
-        const userData = encodeURIComponent(JSON.stringify(data));
+        // Almacenar solo el objeto user
+        localStorage.setItem('harmonichat_user', JSON.stringify(data.user));
+        const userData = encodeURIComponent(JSON.stringify(data.user));
         
-        // Redirigir después de 1.5 segundos
         setTimeout(() => {
             window.location.href = `http://localhost:3001?user=${userData}`;
         }, 1500);
