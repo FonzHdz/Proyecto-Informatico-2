@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -78,14 +79,14 @@ public class EmotionController {
     @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EmotionResponse2> createEmotion(
             @RequestPart("emotion") String emotionJson,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "defaultImagePath", required = false) String defaultImagePath) {
 
         try {
             EmotionRequest request = objectMapper.readValue(emotionJson, EmotionRequest.class);
 
             // Validación
             if (request.name() == null || request.name().trim().isEmpty()) {
-                System.out.println("Error: name es null o vacío");
                 return ResponseEntity.badRequest().build();
             }
 
@@ -93,14 +94,18 @@ public class EmotionController {
             try {
                 userId = UUID.fromString(request.userId());
             } catch (IllegalArgumentException e) {
-                System.out.println("UUID inválido: " + request.userId());
                 return ResponseEntity.badRequest().body(null);
             }
 
-            // Subir imagen si existe
+            // Manejar imagen
             String fileUrl = null;
+
             if (file != null && !file.isEmpty()) {
+                // Subir imagen proporcionada por el usuario
                 fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
+            } else if (defaultImagePath != null && !defaultImagePath.isEmpty()) {
+                // Usar imagen predeterminada
+                fileUrl = defaultImagePath;
             }
 
             // Crear y guardar la emoción
@@ -139,15 +144,74 @@ public class EmotionController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Eliminar el archivo asociado si existe
+            // Eliminar el archivo asociado solo si es una URL del blob storage
             if (emotion.getFilesURL() != null && !emotion.getFilesURL().isEmpty()) {
-                blobStorageService.deleteFile(emotion.getFilesURL(), BlobContainerType.EMOTIONS);
+                // Verificar si es una imagen predeterminada (no empieza con http)
+                if (!emotion.getFilesURL().startsWith("http") && !emotion.getFilesURL().startsWith("/emotions/")) {
+                    blobStorageService.deleteFile(emotion.getFilesURL(), BlobContainerType.EMOTIONS);
+                }
+                // Si es una imagen predeterminada (/emotions/...), no hacemos nada con el almacenamiento
             }
 
             emotionService.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (IOException e) {
             // Log the error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PatchMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EmotionResponse2> updateEmotion(
+            @PathVariable UUID id,
+            @RequestPart("emotion") String emotionJson,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "removeImage", required = false) String removeImage) {
+
+        try {
+            Optional<Emotion> existingEmotion = emotionService.findById(id);
+            if (existingEmotion.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            EmotionRequest request = objectMapper.readValue(emotionJson, EmotionRequest.class);
+            Emotion emotionToUpdate = existingEmotion.get();
+
+            // Actualizar campos básicos
+            emotionToUpdate.setName(request.name());
+            emotionToUpdate.setDescription(request.description());
+
+            // Manejar imagen
+            if ("true".equalsIgnoreCase(removeImage)) {
+                // Eliminar imagen existente si hay una
+                if (emotionToUpdate.getFilesURL() != null) {
+                    blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
+                    emotionToUpdate.setFilesURL(null);
+                }
+            } else if (file != null && !file.isEmpty()) {
+                // Subir nueva imagen y eliminar la anterior si existe
+                if (emotionToUpdate.getFilesURL() != null) {
+                    blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
+                }
+                String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
+                emotionToUpdate.setFilesURL(fileUrl);
+            }
+
+            // Guardar cambios
+            Emotion updatedEmotion = emotionService.save(emotionToUpdate);
+
+            // Convertir a DTO de respuesta
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+            EmotionResponse2 response = new EmotionResponse2(
+                    updatedEmotion.getName(),
+                    updatedEmotion.getDescription(),
+                    updatedEmotion.getFilesURL(),
+                    updatedEmotion.getCreationDate().format(formatter),
+                    updatedEmotion.getUserId()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

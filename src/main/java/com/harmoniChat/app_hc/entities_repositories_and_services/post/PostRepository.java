@@ -1,6 +1,5 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
-import com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary.Emotion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

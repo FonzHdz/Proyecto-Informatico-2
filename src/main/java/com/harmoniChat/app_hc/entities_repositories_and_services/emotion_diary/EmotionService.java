@@ -39,6 +39,10 @@ public class EmotionService {
         return emotionRepository.save(emotion);
     }
 
+    public Emotion save(Emotion emotion) {
+        return emotionRepository.save(emotion);
+    }
+
     public boolean existsById(UUID id) {
         return emotionRepository.existsById(id);
     }
