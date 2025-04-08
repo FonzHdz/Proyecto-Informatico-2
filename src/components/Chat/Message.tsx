@@ -44,7 +44,7 @@ const MessageBubble = styled.div<{ $isCurrentUser: boolean, $hasMedia: boolean }
     props.$isCurrentUser ? '#905BBC' : '#3498DB'};
   color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  word-wrap: break-word;
 `;
 
 const HeaderRow = styled.div`
@@ -145,17 +145,17 @@ const FileIconContainer = styled.div`
 const FileMeta = styled.div`
   flex: 1;
   min-width: 0;
-  overflow: hidden; // Mantiene el contenido dentro del contenedor
+  overflow: hidden;
 `;
 
 const FileName = styled.div`
   font-size: 14px;
   font-weight: 500;
   color: white;
-  white-space: normal;  // Cambiado de nowrap a normal
-  overflow: visible;    // Asegura que el contenido no se oculte
-  word-break: break-word; // Permite que las palabras largas se dividan
-  max-width: 100%;      // Asegura que no exceda el ancho disponible
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word;
+  max-width: 100%;
 `;
 
 const FileSize = styled.div`

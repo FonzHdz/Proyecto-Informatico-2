@@ -184,7 +184,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     onSend, 
     onFileUpload, 
     uploadProgress,
-    isUploading // Nueva prop
+    isUploading
   }) => {
     const [message, setMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -216,16 +216,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     };
 
-    const handleFileButtonClick = (type: 'image' | 'video' | 'file') => {
-        setShowFileMenu(false);
-        if (fileInputRef.current) {
-        fileInputRef.current.accept = 
-            type === 'image' ? 'image/*' : 
-            type === 'video' ? 'video/*' : '*';
-        fileInputRef.current.click();
-        }
-    };
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
@@ -234,22 +224,31 @@ const MessageInput: React.FC<MessageInputProps> = ({
         if (e.target === imageInputRef.current) type = 'image';
         if (e.target === videoInputRef.current) type = 'video';
         
-        // Pasar el archivo junto con el tipo
         onFileUpload(type, file);
-        e.target.value = ''; // Resetear input
+        e.target.value = '';
         }
     };
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-        if (showFileMenu && !(e.target as Element).closest('.file-menu-container')) {
+          const target = e.target as Element;
+          
+          if (target.closest('.emoji-picker') || target.closest('.fi-rr-smile')) {
+            return;
+          }
+          
+          if (showFileMenu && !target.closest('.file-menu-container')) {
             setShowFileMenu(false);
-        }
+          }
+          
+          if (showEmojiPicker && !target.closest('.emoji-picker')) {
+            setShowEmojiPicker(false);
+          }
         };
-
+      
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showFileMenu]);
+      }, [showFileMenu, showEmojiPicker]);
 
     useEffect(() => {
         if (inputRef.current) {
@@ -303,19 +302,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
             <i 
             className="fi fi-rr-smile" 
             title="Emoji" 
-            onClick={() => setShowEmojiPicker(prev => !prev)} 
+            onClick={(e) => {
+                e.stopPropagation();
+                setShowEmojiPicker(prev => !prev);
+            }} 
             />
         </IconButtons>
 
         {showEmojiPicker && (
-            <EmojiPickerWrapper>
-            <Picker 
+            <EmojiPickerWrapper className="emoji-picker">
+                <Picker 
                 data={data} 
                 theme="light" 
                 onEmojiSelect={handleEmojiSelect} 
                 locale="es" 
                 onClickOutside={() => setShowEmojiPicker(false)}
-            />
+                />
             </EmojiPickerWrapper>
         )}
 
