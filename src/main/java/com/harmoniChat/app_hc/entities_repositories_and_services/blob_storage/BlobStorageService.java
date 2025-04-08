@@ -29,11 +29,17 @@ public class BlobStorageService {
     @Value("${spring.azure.storage.containers.emotions_diary}")
     private String emotionsContainer;
 
+    @Value("${spring.azure.storage.containers.chat}")
+    private String messagesContainer;
+
     @Value("${spring.azure.storage.tokens.posts}")
     private String postsToken;
 
     @Value("${spring.azure.storage.tokens.emotions}")
     private String emotionsToken;
+
+    @Value("${spring.azure.storage.tokens.messages}")
+    private String messagesToken;
 
     public String uploadFile(MultipartFile file, BlobContainerType containerType) throws IOException {
         try {
@@ -105,11 +111,19 @@ public class BlobStorageService {
     }
 
     private String getContainerName(BlobContainerType type) {
-        return type == BlobContainerType.POSTS ? postsContainer : emotionsContainer;
+        return switch (type) {
+            case POSTS -> postsContainer;
+            case EMOTIONS -> emotionsContainer;
+            case MESSAGES -> messagesContainer;
+        };
     }
 
     private String getSasToken(BlobContainerType type) {
-        return type == BlobContainerType.POSTS ? postsToken : emotionsToken;
+        return switch (type) {
+            case POSTS -> postsToken;
+            case EMOTIONS -> emotionsToken;
+            case MESSAGES -> messagesToken;
+        };
     }
 
     private String generateUniqueFileName(String originalName) {

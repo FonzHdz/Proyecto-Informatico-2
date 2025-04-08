@@ -1,11 +1,15 @@
 package com.harmoniChat.app_hc.api.v1.controllers.chat;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.chat.Message;
 import com.harmoniChat.app_hc.entities_repositories_and_services.chat.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChatController {
     private final MessageService messageService;
+    private final BlobStorageService blobStorageService;
 
     @PostMapping("/send")
     public ResponseEntity<Message> sendMessage(
@@ -21,9 +26,19 @@ public class ChatController {
             @RequestParam UUID familyId,
             @RequestParam String content,
             @RequestParam(defaultValue = "TEXT") String type,
-            @RequestParam(required = false) String fileURL) {
+            @RequestParam(required = false) MultipartFile file) {
 
-        Message message = messageService.sendMessage(userId, familyId, content, type, fileURL);
+        String fileUrl = null;
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                fileUrl = blobStorageService.uploadFile(file, BlobContainerType.MESSAGES);
+            } catch (IOException e) {
+                return ResponseEntity.internalServerError().build();
+            }
+        }
+
+        Message message = messageService.sendMessage(userId, familyId, content, type, fileUrl);
         return ResponseEntity.ok(message);
     }
 

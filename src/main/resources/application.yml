@@ -37,9 +37,11 @@ spring:
       containers:
         emotions_diary: "emotions"
         posts: "posts"
+        chat: "messages"
       tokens:
         emotions: "sp=racwdli&st=2025-04-02T21:00:30Z&se=2025-12-04T05:00:30Z&sv=2024-11-04&sr=c&sig=uUtzG5ISis14LlMW5CSk5D2KP%2F6INHbS%2Bai6pt2woSs%3D"
         posts: "sp=racwdli&st=2025-04-02T21:45:05Z&se=2025-12-02T05:45:05Z&sv=2024-11-04&sr=c&sig=SydTXcIYLS3o%2FFQoHiBJlfLEQQ9ifcMEj39B5gUDOlc%3D"
+        messages: "sp=racwdli&st=2025-04-08T19:28:24Z&se=2025-12-09T03:28:24Z&sv=2024-11-04&sr=c&sig=MU1eJTal12qRdx%2BHYXNHCA3W2k3HF87Ih2rrX1gR%2BuQ%3D"
   servlet:
     multipart:
       enabled: true

@@ -1,5 +1,7 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.chat;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
+import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.Family;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.FamilyRepository;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +23,7 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final FamilyRepository familyRepository;
+    private final BlobStorageService blobStorageService;
 
     @Transactional
     public Message sendMessage(UUID userId, UUID familyId, String content, String type, String fileURL) {
@@ -87,5 +91,23 @@ public class MessageService {
             // Puedes loggear el error aquí si es necesario
             throw e; // Re-lanzar la excepción para que el controlador la maneje
         }
+    }
+
+    @Transactional
+    public void deleteMessage(UUID messageId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        // Eliminar archivo si existe
+        if (message.getFileURL() != null) {
+            try {
+                blobStorageService.deleteFile(message.getFileURL(), BlobContainerType.MESSAGES);
+            } catch (IOException e) {
+                // Log the error but don't stop the message deletion
+                System.err.println("Error deleting file from blob storage: " + e.getMessage());
+            }
+        }
+
+        messageRepository.delete(message);
     }
 }
