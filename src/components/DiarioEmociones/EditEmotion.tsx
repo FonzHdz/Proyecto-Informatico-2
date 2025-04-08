@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 
-interface CreateEmotionProps {
+interface EditEmotionProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (emotion?: any) => void;
+  emotionId: string;
+  onUpdate: () => void;
+  initialEmotion?: string;
+  initialDescription?: string;
+  initialImage?: string;
 }
 
 const PopupOverlay = styled.div`
@@ -136,42 +140,121 @@ const Button = styled.button`
   }
 `;
 
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: right;
+  padding: 4px;
+  font-size: 14px;
+
+  &:hover {
+    color: #4a90e2;
+    .fi {
+      transform: scale(1.1);
+    }
+  }
+
+  i {
+    font-size: 16px;
+  }
+`;
+
+const DeleteButton = styled(ActionButton)`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 71, 87, 0.9);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 0;
+
+  &:hover {
+    background: rgba(255, 71, 87, 1);
+    color: white;
+  }
+`;
+
+const ImageContainer = styled.div`
+  position: relative;
+  width: 100%;
+  height: 180px;
+
+  &:hover ${DeleteButton} {
+    opacity: 1;
+  }
+`;
+
+
 const emotions = [
-  { id: 'tristeza', icon: '☹️', label: 'Tristeza', defaultImages: 3 },
-  { id: 'alegria', icon: '☺️', label: 'Alegría', defaultImages: 3 },
-  { id: 'calma', icon: '😌', label: 'Calma', defaultImages: 3 },
-  { id: 'enojo', icon: '😠', label: 'Enojo', defaultImages: 3 },
-  { id: 'miedo', icon: '😨', label: 'Miedo', defaultImages: 3 },
-  { id: 'sorpresa', icon: '😲', label: 'Sorpresa', defaultImages: 3 }
+  { id: 'tristeza', icon: '☹️', label: 'Tristeza' },
+  { id: 'alegria', icon: '☺️', label: 'Alegría' },
+  { id: 'calma', icon: '😌', label: 'Calma' },
+  { id: 'enojo', icon: '😠', label: 'Enojo' },
+  { id: 'miedo', icon: '😨', label: 'Miedo' },
+  { id: 'sorpresa', icon: '😲', label: 'Sorpresa' }
 ];
 
-const getRandomDefaultImage = (emotionId: string): string => {
-  const emotion = emotions.find(e => e.id === emotionId);
-  if (!emotion) return '';
-  
-  const randomIndex = Math.floor(Math.random() * emotion.defaultImages) + 1;
-  return `/emotions/${emotionId}/${emotionId}-${randomIndex}.png`;
+const getEmotionId = (emotionLabel: string) => {
+  const emotion = emotions.find(e => e.label.toLowerCase() === emotionLabel.toLowerCase());
+  return emotion ? emotion.id : '';
 };
 
-const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedEmotion, setSelectedEmotion] = useState('');
-  const [description, setDescription] = useState('');
+const EditEmotion: React.FC<EditEmotionProps> = ({ 
+  isOpen, 
+  onClose, 
+  emotionId, 
+  onUpdate,
+  initialEmotion = '',
+  initialDescription = '',
+  initialImage = ''
+}) => {
+  const [selectedEmotion, setSelectedEmotion] = useState(getEmotionId(initialEmotion));
+  const [description, setDescription] = useState(initialDescription);
   const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState(initialImage);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [keepCurrentImage, setKeepCurrentImage] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Resetear estados cuando se abre el modal
+      setSelectedEmotion(getEmotionId(initialEmotion));
+      setDescription(initialDescription);
+      setImagePreview(initialImage);
+      setImage(null);
+      setKeepCurrentImage(true);
+      setError('');
+    }
+  }, [isOpen, initialEmotion, initialDescription, initialImage]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
+      setKeepCurrentImage(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImage(null);
+    setImagePreview('');
+    setKeepCurrentImage(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,52 +275,55 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
     setError('');
   
     try {
-      const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
       const emotionObj = emotions.find(e => e.id === selectedEmotion);
       const emotionLabel = emotionObj?.label || selectedEmotion;
-  
+
       const formData = new FormData();
       const emotionData = {
         name: emotionLabel,
         description: description,
-        userId: user.id,
-        useDefaultImage: !image
+        userId: user.id
       };
 
       formData.append('emotion', new Blob([JSON.stringify(emotionData)], {
         type: 'application/json'
       }));
 
-      if (image) {
+      // Si hay una nueva imagen, la agregamos al formData
+      if (image && !keepCurrentImage) {
         formData.append('file', image);
-      } else {
-        const defaultImagePath = getRandomDefaultImage(selectedEmotion);
-        formData.append('defaultImagePath', defaultImagePath);
+      } else if (!keepCurrentImage && !image) {
+        // Si el usuario quiere eliminar la imagen existente
+        formData.append('removeImage', 'true');
       }
       
-      const response = await axios.post('http://localhost:8070/emotion/new', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      // Usamos PATCH para la actualización parcial
+      const response = await axios.patch(
+        `http://localhost:8070/emotion/update/${emotionId}`, 
+        formData, 
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      });
-  
-      console.log('Emoción creada:', response.data);
+      );
       
+      // Limpiar el formulario
       setSelectedEmotion('');
       setDescription('');
       setImage(null);
       setImagePreview('');
-      setIsCreateOpen(false);
       
-  
-      if (onSubmit) {
-        onSubmit();
+      // Notificar al componente padre que la emoción fue actualizada
+      if (onUpdate) {
+        onUpdate();
       }
 
+      // Cerrar el modal
       onClose();
   
     } catch (err) {
-      setError('Error al crear la emoción. Por favor intenta nuevamente.');
+      setError('Error al actualizar la emoción. Por favor intenta nuevamente.');
       console.error('Error:', err);
     } finally {
       setIsLoading(false);
@@ -249,7 +335,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
   return (
     <PopupOverlay onClick={onClose}>
       <PopupContent onClick={e => e.stopPropagation()}>
-        <h2>Nueva entrada en el diario</h2>
+        <h2>Editar emoción</h2>
         <Form onSubmit={handleSubmit}>
           <FormSection>
             <Label>¿Cómo te sientes?</Label>
@@ -277,7 +363,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
           </FormSection>
 
           <FormSection>
-            <Label>Agrega una foto o video</Label>
+            <Label>Imagen actual</Label>
             <input
               type="file"
               accept="image/*"
@@ -286,16 +372,30 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
               id="media-upload"
             />
             <label htmlFor="media-upload">
-              <ImagePreview
-                style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
-              >
-                {!imagePreview && 'Haz clic para subir una imagen'}
-              </ImagePreview>
+              <ImageContainer>
+                <ImagePreview
+                  style={imagePreview ? { 
+                    backgroundImage: `url(${imagePreview})`,
+                    cursor: 'pointer'
+                  } : {}}
+                >
+                  {!imagePreview && 'Haz clic para cambiar la imagen'}
+                </ImagePreview>
+                {imagePreview && (
+                  <DeleteButton onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveImage();
+                  }}>
+                    X
+                  </DeleteButton>
+                )}
+              </ImageContainer>
             </label>
           </FormSection>
 
+          {error && <div style={{ color: 'red', fontSize: '14px' }}>{error}</div>}
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Guardando...' : 'Guardar emoción'}
+            {isLoading ? 'Guardando...' : 'Guardar cambios'}
           </Button>
         </Form>
       </PopupContent>
@@ -303,4 +403,4 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
   );
 };
 
-export default CreateEmotion;
+export default EditEmotion;

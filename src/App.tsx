@@ -94,7 +94,7 @@ const MainContent = styled.div`
   margin: 60px auto 0;
   width: calc(100% - 80px);
   height: calc(100vh - 80px);
-  overflow-y: scroll;
+  overflow-y: auto;
 `;
 
 const Header = styled.div`

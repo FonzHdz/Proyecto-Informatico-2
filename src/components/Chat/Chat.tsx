@@ -6,88 +6,80 @@ import Message from './Message';
 import MessageInput from './MessageInput';
 
 interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  familyId?: string;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  date: string;
-  type: string;
-  state: string;
-  user: {
     id: string;
     firstName: string;
     lastName: string;
-  };
-  fileURL?: string;
-}
-
-const ChatContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 120px);
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-`;
-
-const MessagesContainer = styled.div`
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  background: #f5f5f5;
-`;
-
-const ChatHeader = styled.div`
-  padding: 15px 20px;
-  background: linear-gradient(90deg, #4a90e2 0%, #7b1fa2 100%);
-  color: white;
-  font-size: 18px;
-  font-weight: 500;
-`;
-
-const NoMessages = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  color: #666;
-`;
-
-const FileInputContainer = styled.div`
-  display: flex;
-  gap: 10px;
-  padding: 10px 20px;
-  background: #f0f0f0;
-  border-top: 1px solid #e0e0e0;
-`;
-
-const FileInputButton = styled.button`
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 5px;
-  border-radius: 4px;
-  transition: all 0.2s;
-
-  &:hover {
-    color: #4a90e2;
-    background: rgba(0, 0, 0, 0.05);
+    email: string;
+    role: string;
+    familyId?: string;
   }
-`;
-
-const LoadingContainer = styled.div`
+  
+  interface Message {
+    id: string;
+    content: string;
+    date: string;
+    type: string;
+    state: string;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    fileURL?: string;
+  }
+  
+  const ChatContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: calc(100% - 0px);
+    margin-left: 50px;
+    margin-right: -20px; 
+  `;
+    
+  const MessagesContainer = styled.div`
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  `;
+  
+  const NoMessages = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #666;
+    font-size: 14px;
+  `;
+  
+  const FileInputContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    background: #f0f0f0;
+    border-top: 1px solid #e0e0e0;
+  `;
+  
+  const FileInputButton = styled.button`
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  
+    &:hover {
+      color: #4a90e2;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  `;
+  
+  const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -114,7 +106,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [stompClient, setStompClient] = useState<Client | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [connectionStatus, setConnectionStatus] = useState('connecting');
+    const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,7 +136,6 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
                 try {
                     const newMessage: Message = JSON.parse(message.body);
                     setMessages(prev => {
-                        // Evitar duplicados verificando si el mensaje ya existe
                         const messageExists = prev.some(m => m.id === newMessage.id);
                         return messageExists ? prev : [...prev, newMessage];
                     });
@@ -209,7 +200,8 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
                 id: user.familyId
             },
             type: 'TEXT',
-            state: 'SENT'
+            state: 'SENT',
+            date: new Date().toISOString()
         };
 
         stompClient.publish({
@@ -234,7 +226,8 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
             },
             type,
             fileURL: fileUrl,
-            state: 'SENT'
+            state: 'SENT',
+            date: new Date().toISOString()
         };
 
         stompClient.publish({
@@ -299,12 +292,6 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
 
     return (
         <ChatContainer>
-            <ChatHeader>
-                Chat Familiar 
-                {isLoading && <span> - Cargando...</span>}
-                {connectionStatus === 'error' && <span> - Error de conexión</span>}
-            </ChatHeader>
-            
             <MessagesContainer>
                 {isLoading ? (
                     <LoadingContainer>
@@ -313,38 +300,18 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
                 ) : messages.length === 0 ? (
                     <NoMessages>No hay mensajes aún. ¡Envía el primero!</NoMessages>
                 ) : (
-                    messages.map((message) => (
-                        <Message 
-                            key={message.id} 
-                            message={message} 
-                            isCurrentUser={message.user.id === user.id}
+                    messages.map((message, index) => (
+                        <Message
+                          key={message.id}
+                          message={message}
+                          isCurrentUser={message.user.id === user.id}
+                          previousMessage={index > 0 ? messages[index - 1] : undefined}
                         />
-                    ))
+                      ))
                 )}
                 <div ref={messagesEndRef} />
             </MessagesContainer>
-            
-            <FileInputContainer>
-                <FileInputButton onClick={() => handleFileUpload('image')} aria-label="Subir imagen">
-                    📷
-                </FileInputButton>
-                <FileInputButton onClick={() => handleFileUpload('video')} aria-label="Subir video">
-                    🎥
-                </FileInputButton>
-                <FileInputButton onClick={() => handleFileUpload('file')} aria-label="Subir archivo">
-                    📎
-                </FileInputButton>
-                
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                    aria-hidden="true"
-                />
-            </FileInputContainer>
-            
-            <MessageInput onSend={sendMessage} />
+            <MessageInput onSend={sendMessage} onFileUploadClick={() => handleFileUpload('file')} />
         </ChatContainer>
     );
 };

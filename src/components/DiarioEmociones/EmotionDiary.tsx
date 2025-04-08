@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CreateEmotion from './CreateEmotion';
+import EditEmotion from './EditEmotion';
 import axios from 'axios';
 
 const EmotionContainer = styled.div`
@@ -201,6 +202,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
   const [emotions, setEmotions] = useState<EmotionEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingEmotion, setEditingEmotion] = useState<EmotionEntry | null>(null);
 
   // Cargar emociones del usuario
   useEffect(() => {
@@ -303,7 +305,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
               )}
               <EmotionText>{entry.description}</EmotionText>
               <ActionButtons>
-                <ActionButton>
+                <ActionButton onClick={() => setEditingEmotion(entry)}>
                   <i className="fi fi-rr-edit"></i>
                 </ActionButton>
                 <DeleteButton onClick={() => handleDeleteEmotion(entry.id)}>
@@ -328,6 +330,17 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
         onClose={() => setIsCreateOpen(false)}
         onSubmit={handleCreateEmotion}
       />
+      {editingEmotion && (
+        <EditEmotion
+          isOpen={true}
+          onClose={() => setEditingEmotion(null)}
+          emotionId={editingEmotion.id}
+          onUpdate={handleCreateEmotion} // Reutilizamos la misma función para refrescar
+          initialEmotion={editingEmotion.emotion}
+          initialDescription={editingEmotion.description}
+          initialImage={editingEmotion.image}
+        />
+      )}
     </>
   );
 };

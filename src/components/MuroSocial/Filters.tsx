@@ -172,19 +172,6 @@ const Filters: React.FC<FiltersProps> = ({
       
       <FilterSection>
         <FilterTitle>Publicado por</FilterTitle>
-        {/* Opción "Yo" */}
-        <FilterOption>
-          <RadioButton 
-            type="radio" 
-            name="author" 
-            id="yo" 
-            checked={filters.author === 'yo'}
-            onChange={() => handleAuthorChange('yo')}
-          />
-          <Label htmlFor="yo">Yo</Label>
-        </FilterOption>
-        
-        {/* Opciones para cada miembro de la familia */}
         {familyMembers.map(member => (
           member.id !== currentUserId && (
             <FilterOption key={member.id}>
@@ -201,6 +188,16 @@ const Filters: React.FC<FiltersProps> = ({
             </FilterOption>
           )
         ))}
+        <FilterOption>
+          <RadioButton 
+            type="radio" 
+            name="author" 
+            id="yo" 
+            checked={filters.author === 'yo'}
+            onChange={() => handleAuthorChange('yo')}
+          />
+          <Label htmlFor="yo">Yo</Label>
+        </FilterOption>
       </FilterSection>
 
       <FilterSection>
