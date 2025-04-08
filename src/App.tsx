@@ -414,21 +414,6 @@ function App() {
     }
   };
 
-  if (isCheckingAuth) {
-    // Muestra un loader mientras verifica la autenticación
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        width: '100vw'
-      }}>
-        <div>Cargando...</div>
-      </div>
-    );
-  }
-
   return (
     <AppContainer>
       <Sidebar>

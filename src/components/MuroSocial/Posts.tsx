@@ -42,6 +42,7 @@ const Header = styled.div`
   right: 0;
   z-index: 100;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 60px;
 `;
 
 const PostsContainer = styled.div`
@@ -364,9 +365,12 @@ const Posts: React.FC<PostsProps> = ({
   };
 
   if (isLoading) return (
-    <LoadingContainer>
-      <LoadingSpinner />
-    </LoadingContainer>
+    <>
+    <Header>Publicaciones</Header>
+      <LoadingContainer>
+        <LoadingSpinner />
+      </LoadingContainer>
+    </>
   );
 
   if (error) return <div>{error}</div>;

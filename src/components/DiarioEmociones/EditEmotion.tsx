@@ -169,8 +169,8 @@ const DeleteButton = styled(ActionButton)`
   background: rgba(255, 71, 87, 0.9);
   color: white;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,6 +181,9 @@ const DeleteButton = styled(ActionButton)`
   &:hover {
     background: rgba(255, 71, 87, 1);
     color: white;
+    .fi {
+      transform: scale(1);
+    }
   }
 `;
 
@@ -386,7 +389,7 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
                     e.stopPropagation();
                     handleRemoveImage();
                   }}>
-                    X
+                    <i className="fi fi-rr-trash"></i>
                   </DeleteButton>
                 )}
               </ImageContainer>

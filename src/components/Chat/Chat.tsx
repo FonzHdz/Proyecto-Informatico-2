@@ -78,6 +78,21 @@ interface User {
       background: rgba(0, 0, 0, 0.05);
     }
   `;
+
+  const Header = styled.div`
+  background: linear-gradient(90deg, #4a90e2 0%, #7b1fa2 100%);
+  padding: 15px 40px;
+  color: white;
+  font-size: 24px;
+  font-weight: 500;
+  position: fixed;
+  top: 0;
+  left: 80px;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 60px;
+`;
   
   const LoadingContainer = styled.div`
   display: flex;
@@ -291,28 +306,31 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
     }, [user.familyId]);
 
     return (
-        <ChatContainer>
-            <MessagesContainer>
-                {isLoading ? (
-                    <LoadingContainer>
-                        <LoadingSpinner />
-                    </LoadingContainer>
-                ) : messages.length === 0 ? (
-                    <NoMessages>No hay mensajes aún. ¡Envía el primero!</NoMessages>
-                ) : (
-                    messages.map((message, index) => (
-                        <Message
-                          key={message.id}
-                          message={message}
-                          isCurrentUser={message.user.id === user.id}
-                          previousMessage={index > 0 ? messages[index - 1] : undefined}
-                        />
-                      ))
-                )}
-                <div ref={messagesEndRef} />
-            </MessagesContainer>
-            <MessageInput onSend={sendMessage} onFileUploadClick={() => handleFileUpload('file')} />
-        </ChatContainer>
+        <>
+        <Header>Chat familiar</Header>
+            <ChatContainer>
+                <MessagesContainer>
+                    {isLoading ? (
+                        <LoadingContainer>
+                            <LoadingSpinner />
+                        </LoadingContainer>
+                    ) : messages.length === 0 ? (
+                        <NoMessages>No hay mensajes aún. ¡Envía el primero!</NoMessages>
+                    ) : (
+                        messages.map((message, index) => (
+                            <Message
+                            key={message.id}
+                            message={message}
+                            isCurrentUser={message.user.id === user.id}
+                            previousMessage={index > 0 ? messages[index - 1] : undefined}
+                            />
+                        ))
+                    )}
+                    <div ref={messagesEndRef} />
+                </MessagesContainer>
+                <MessageInput onSend={sendMessage} onFileUploadClick={() => handleFileUpload('file')} />
+            </ChatContainer>
+        </>
     );
 };
 
