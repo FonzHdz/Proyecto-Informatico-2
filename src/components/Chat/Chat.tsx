@@ -37,6 +37,7 @@ const ChatContainer = styled.div`
   width: calc(100% - 0px);
   margin-left: 50px;
   margin-right: -20px;
+  overflow: hidden;
 `;
 
 const MessagesContainer = styled.div`

@@ -212,7 +212,7 @@ interface User {
 
 function App() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('diary');
+  const [activeSection, setActiveSection] = useState('chat');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -383,6 +383,8 @@ function App() {
     }
   
     switch (activeSection) {
+      case 'chat':
+        return <Chat user={currentUser} />;
       case 'diary':
         return <EmotionDiary userId={currentUser.id} />;
       case 'posts':
@@ -407,8 +409,6 @@ function App() {
             </FiltersArea>
           </>
         );
-      case 'chat':
-        return <Chat user={currentUser} />;
       default:
         return <div>Sección en construcción</div>;
     }

@@ -45,6 +45,7 @@ const MessageBubble = styled.div<{ $isCurrentUser: boolean, $hasMedia: boolean }
   color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   word-wrap: break-word;
+  overflow: hidden;
 `;
 
 const HeaderRow = styled.div`
