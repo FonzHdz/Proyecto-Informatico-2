@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -161,6 +162,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
   const [imagePreview, setImagePreview] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { showAlert } = useAlert();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -179,12 +181,20 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
 
     const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
     if (!user?.id) {
-      setError('No se encontró usuario. Por favor inicia sesión.');
+      showAlert({
+        title: 'Error de autenticación',
+        message: 'No se encontró usuario. Por favor inicia sesión.',
+        showCancel: false
+      });
       return;
     }
     
     if (!selectedEmotion || !description) {
-      setError('Por favor selecciona una emoción y escribe una descripción');
+      showAlert({
+        title: 'Campos requeridos',
+        message: 'Por favor selecciona una emoción y escribe una descripción',
+        showCancel: false
+      });
       return;
     }
   
@@ -215,13 +225,11 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
         formData.append('defaultImagePath', defaultImagePath);
       }
       
-      const response = await axios.post('http://localhost:8070/emotion/new', formData, {
+      await axios.post('http://localhost:8070/emotion/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-  
-      console.log('Emoción creada:', response.data);
       
       setSelectedEmotion('');
       setDescription('');
@@ -229,7 +237,6 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       setImagePreview('');
       setIsCreateOpen(false);
       
-  
       if (onSubmit) {
         onSubmit();
       }
@@ -237,7 +244,11 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
       onClose();
   
     } catch (err) {
-      setError('Error al crear la emoción. Por favor intenta nuevamente.');
+      showAlert({
+        title: 'Error',
+        message: 'Error al crear la emoción. Por favor intenta nuevamente.',
+        showCancel: false
+      });
       console.error('Error:', err);
     } finally {
       setIsLoading(false);

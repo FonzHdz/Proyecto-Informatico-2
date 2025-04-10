@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertProvider } from './context/AlertContext';
 import styled from 'styled-components';
 import Posts from './components/MuroSocial/Posts';
 import CreatePost from './components/MuroSocial/CreatePost';
@@ -28,10 +29,13 @@ const Sidebar = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   margin-bottom: 80px;
+  background: white;
+  padding: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5)
 `;
 
 const MainIconsContainer = styled.div`
@@ -226,7 +230,35 @@ function App() {
     mediaType: ''
   });
 
-  // Función para obtener miembros de la familia
+  useEffect(() => {
+    const checkAuth = () => {
+      // Verificar parámetros URL
+      const params = new URLSearchParams(window.location.search);
+      const urlUser = getValidUser(params.get('user'));
+      
+      if (urlUser) {
+        setCurrentUser(urlUser);
+        localStorage.setItem('harmonichat_user', JSON.stringify(urlUser));
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Verificar localStorage
+      const storedUser = getValidUser(localStorage.getItem('harmonichat_user'));
+      if (storedUser) {
+        setCurrentUser(storedUser);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Redirigir si no autenticado
+      window.location.href = 'http://localhost:3000';
+    };
+  
+    checkAuth();
+  }, []);
+
   const fetchFamilyMembers = async (familyId: string) => {
     try {
       setIsLoadingMembers(true);
@@ -259,7 +291,6 @@ function App() {
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
   };
 
-  // Función para aplicar filtros
   const applyFilters = (posts: Post[], filters: any, currentUserId: string, familyMembers: FamilyMember[]): Post[] => {
     let filteredPosts = [...posts];
   
@@ -291,12 +322,12 @@ function App() {
     // Filtro por tipo de multimedia
     if (filters.mediaType) {
       filteredPosts = filteredPosts.filter(post => {
-        const cleanUrl = post.filesURL?.split('?')[0]; // Eliminar query params si existe
+        const cleanUrl = post.filesURL?.split('?')[0];
         const extension = cleanUrl?.split('.').pop()?.toLowerCase();
         
         switch (filters.mediaType) {
           case 'foto':
-            return ['jpg', 'jpeg', 'png', 'gif'].includes(extension || '');
+            return ['jpg', 'jpeg', 'png'].includes(extension || '');
           case 'video':
             return ['mp4', 'mov', 'avi'].includes(extension || '');
           case 'gif':
@@ -312,7 +343,6 @@ function App() {
     return filteredPosts;
   };
 
-  // Efecto para cargar miembros de la familia cuando cambia el usuario
   useEffect(() => {
     if (currentUser?.familyId) {
       fetchFamilyMembers(currentUser.familyId);
@@ -329,35 +359,6 @@ function App() {
       return null;
     }
   };
-  
-  useEffect(() => {
-    const checkAuth = () => {
-      // Verificar parámetros URL
-      const params = new URLSearchParams(window.location.search);
-      const urlUser = getValidUser(params.get('user'));
-      
-      if (urlUser) {
-        setCurrentUser(urlUser);
-        localStorage.setItem('harmonichat_user', JSON.stringify(urlUser));
-        window.history.replaceState({}, document.title, window.location.pathname);
-        setIsCheckingAuth(false);
-        return;
-      }
-      
-      // Verificar localStorage
-      const storedUser = getValidUser(localStorage.getItem('harmonichat_user'));
-      if (storedUser) {
-        setCurrentUser(storedUser);
-        setIsCheckingAuth(false);
-        return;
-      }
-      
-      // Redirigir si no autenticado
-      window.location.href = 'http://localhost:3000';
-    };
-  
-    checkAuth();
-  }, []);
 
   const handleCreatePost = () => {
 
@@ -395,9 +396,10 @@ function App() {
               <Posts 
                 userId={currentUser.id} 
                 familyId={currentUser.familyId}
-                posts={filteredPosts}  // Pasar los posts filtrados
+                posts={filteredPosts}
                 setPosts={setPosts}
                 currentUserName={`${currentUser.firstName} ${currentUser.lastName}`}
+                currentUserRole={currentUser.role}
               />
             </ContentArea>
             <FiltersArea>
@@ -410,95 +412,101 @@ function App() {
           </>
         );
       default:
-        return <div>Sección en construcción</div>;
+        return (
+          <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
+           Sección en construcción
+          </div>
+        );
     }
   };
 
   return (
-    <AppContainer>
-      <Sidebar>
-        <Logo src="/Logo.png" alt="Logo" />
+    <AlertProvider>
+      <AppContainer>
+        <Sidebar>
+          <Logo src="/Logo.png" alt="Logo" />
+          {currentUser && (
+            <>
+              <MainIconsContainer>
+                <SidebarIcon 
+                  active={activeSection === 'chat'} 
+                  onClick={() => handleSectionChange('chat')}
+                >
+                  <i className="fi fi-rr-messages"></i>
+                </SidebarIcon>
+                <SidebarIcon 
+                  active={activeSection === 'diary'} 
+                  onClick={() => handleSectionChange('diary')}
+                >
+                  <i className="fi fi-rr-grin"></i>
+                </SidebarIcon>
+                <SidebarIcon 
+                  active={activeSection === 'album'} 
+                  onClick={() => handleSectionChange('album')}
+                >
+                  <i className="fi fi-rr-grid"></i>
+                </SidebarIcon>
+                <SidebarIcon 
+                  active={activeSection === 'posts'} 
+                  onClick={() => handleSectionChange('posts')}
+                >
+                  <i className="fi fi-rr-camera"></i>
+                </SidebarIcon>
+                <SidebarIcon 
+                  active={activeSection === 'chatbot'} 
+                  onClick={() => handleSectionChange('chatbot')}
+                >
+                  <i className="fi fi-rr-robot"></i>
+                </SidebarIcon>
+              </MainIconsContainer>
+              <ProfileIconContainer>
+                <SidebarIcon 
+                  active={activeSection === 'profile'} 
+                  onClick={() => handleSectionChange('profile')}
+                >
+                  <i className="fi fi-rr-user"></i>
+                </SidebarIcon>
+                <SidebarIcon onClick={handleLogout}>
+                  <i className="fi fi-rr-exit"></i>
+                </SidebarIcon>
+              </ProfileIconContainer>
+            </>
+          )}
+        </Sidebar>
+
+        <Header>
+          {currentUser ? (
+            <>
+              {activeSection === 'diary' ? 'Diario de emociones' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+              <span style={{ float: 'right', fontSize: '16px' }}>
+              </span>
+            </>
+          ) : (
+            'HarmoniChat'
+          )}
+        </Header>
+        
+        <MainContent>
+          {renderContent()}
+        </MainContent>
+
+        {currentUser && activeSection === 'posts' && (
+          <CreateButton onClick={() => setIsCreatePostOpen(true)}>
+            <i className="fi fi-rr-plus"></i>
+          </CreateButton>
+        )}
         {currentUser && (
-          <>
-            <MainIconsContainer>
-              <SidebarIcon 
-                active={activeSection === 'chat'} 
-                onClick={() => handleSectionChange('chat')}
-              >
-                <i className="fi fi-rr-messages"></i>
-              </SidebarIcon>
-              <SidebarIcon 
-                active={activeSection === 'diary'} 
-                onClick={() => handleSectionChange('diary')}
-              >
-                <i className="fi fi-rr-grin"></i>
-              </SidebarIcon>
-              <SidebarIcon 
-                active={activeSection === 'album'} 
-                onClick={() => handleSectionChange('album')}
-              >
-                <i className="fi fi-rr-grid"></i>
-              </SidebarIcon>
-              <SidebarIcon 
-                active={activeSection === 'posts'} 
-                onClick={() => handleSectionChange('posts')}
-              >
-                <i className="fi fi-rr-camera"></i>
-              </SidebarIcon>
-              <SidebarIcon 
-                active={activeSection === 'chatbot'} 
-                onClick={() => handleSectionChange('chatbot')}
-              >
-                <i className="fi fi-rr-robot"></i>
-              </SidebarIcon>
-            </MainIconsContainer>
-            <ProfileIconContainer>
-              <SidebarIcon 
-                active={activeSection === 'profile'} 
-                onClick={() => handleSectionChange('profile')}
-              >
-                <i className="fi fi-rr-user"></i>
-              </SidebarIcon>
-              <SidebarIcon onClick={handleLogout}>
-                <i className="fi fi-rr-exit"></i>
-              </SidebarIcon>
-            </ProfileIconContainer>
-          </>
+          <CreatePost
+            isOpen={isCreatePostOpen}
+            onClose={() => setIsCreatePostOpen(false)}
+            onSubmit={handleCreatePost}
+            userId={currentUser.id}
+            familyId={currentUser.familyId}
+            familyMembers={familyMembers}
+          />
         )}
-      </Sidebar>
-
-      <Header>
-        {currentUser ? (
-          <>
-            {activeSection === 'diary' ? 'Diario de emociones' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-            <span style={{ float: 'right', fontSize: '16px' }}>
-            </span>
-          </>
-        ) : (
-          'HarmoniChat'
-        )}
-      </Header>
-      
-      <MainContent>
-        {renderContent()}
-      </MainContent>
-
-      {currentUser && activeSection === 'posts' && (
-        <CreateButton onClick={() => setIsCreatePostOpen(true)}>
-          <i className="fi fi-rr-plus"></i>
-        </CreateButton>
-      )}
-      {currentUser && (
-        <CreatePost
-          isOpen={isCreatePostOpen}
-          onClose={() => setIsCreatePostOpen(false)}
-          onSubmit={handleCreatePost}
-          userId={currentUser.id}
-          familyId={currentUser.familyId}
-          familyMembers={familyMembers}
-        />
-      )}
-    </AppContainer>
+      </AppContainer>
+    </AlertProvider>
   );
 }
 

@@ -256,7 +256,7 @@ const Filters: React.FC<FiltersProps> = ({
             checked={filters.mediaType === 'none'}
             onChange={() => handleMediaTypeChange('none')}
           />
-          <Label htmlFor="none">Sin multimedia</Label>
+          <Label htmlFor="none">Ninguno</Label>
         </FilterOption>
       </FilterSection>
 

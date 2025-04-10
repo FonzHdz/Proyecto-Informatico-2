@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import styled from 'styled-components';
 import axios from 'axios';
-
-interface EditEmotionProps {
-  isOpen: boolean;
-  onClose: () => void;
-  emotionId: string;
-  onUpdate: () => void;
-  initialEmotion?: string;
-  initialDescription?: string;
-  initialImage?: string;
-}
 
 const PopupOverlay = styled.div`
   position: fixed;
@@ -197,6 +188,15 @@ const ImageContainer = styled.div`
   }
 `;
 
+interface EditEmotionProps {
+  isOpen: boolean;
+  onClose: () => void;
+  emotionId: string;
+  onUpdate: () => void;
+  initialEmotion?: string;
+  initialDescription?: string;
+  initialImage?: string;
+}
 
 const emotions = [
   { id: 'tristeza', icon: '☹️', label: 'Tristeza' },
@@ -228,10 +228,10 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [keepCurrentImage, setKeepCurrentImage] = useState(true);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (isOpen) {
-      // Resetear estados cuando se abre el modal
       setSelectedEmotion(getEmotionId(initialEmotion));
       setDescription(initialDescription);
       setImagePreview(initialImage);
@@ -265,12 +265,20 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
 
     const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
     if (!user?.id) {
-      setError('No se encontró usuario. Por favor inicia sesión.');
+      showAlert({
+        title: 'Error de autenticación',
+        message: 'No se encontró usuario. Por favor inicia sesión.',
+        showCancel: false
+      });
       return;
     }
     
     if (!selectedEmotion || !description) {
-      setError('Por favor selecciona una emoción y escribe una descripción');
+      showAlert({
+        title: 'Campos requeridos',
+        message: 'Por favor selecciona una emoción y escribe una descripción',
+        showCancel: false
+      });
       return;
     }
   
@@ -292,16 +300,13 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
         type: 'application/json'
       }));
 
-      // Si hay una nueva imagen, la agregamos al formData
       if (image && !keepCurrentImage) {
         formData.append('file', image);
       } else if (!keepCurrentImage && !image) {
-        // Si el usuario quiere eliminar la imagen existente
         formData.append('removeImage', 'true');
       }
       
-      // Usamos PATCH para la actualización parcial
-      const response = await axios.patch(
+      await axios.patch(
         `http://localhost:8070/emotion/update/${emotionId}`, 
         formData, 
         {
@@ -311,22 +316,23 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
         }
       );
       
-      // Limpiar el formulario
       setSelectedEmotion('');
       setDescription('');
       setImage(null);
       setImagePreview('');
       
-      // Notificar al componente padre que la emoción fue actualizada
       if (onUpdate) {
         onUpdate();
       }
 
-      // Cerrar el modal
       onClose();
   
     } catch (err) {
-      setError('Error al actualizar la emoción. Por favor intenta nuevamente.');
+      showAlert({
+        title: 'Error',
+        message: 'Error al actualizar la emoción. Por favor intenta nuevamente.',
+        showCancel: false
+      });
       console.error('Error:', err);
     } finally {
       setIsLoading(false);

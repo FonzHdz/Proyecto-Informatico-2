@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import styled from 'styled-components';
 import axios  from 'axios';
 
@@ -232,7 +233,6 @@ const CreatePost: React.FC<CreatePostProps> = ({
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
-  
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [location, setLocation] = useState('');
@@ -242,6 +242,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (isOpen && familyId) {
@@ -298,7 +299,11 @@ const CreatePost: React.FC<CreatePostProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description) {
-      setError('Por favor escribe una descripción');
+      showAlert({
+        title: 'Campo requerido',
+        message: 'Por favor escribe una descripción',
+        showCancel: false
+      });
       return;
     }
 
@@ -328,21 +333,10 @@ const CreatePost: React.FC<CreatePostProps> = ({
         }
       });
 
-      console.log('Enviando datos:', {
-        description,
-        location,
-        userId,
-        familyId,
-        hasImage: !!image
-      });
-  
-      console.log('Respuesta completa del servidor:', response.data);
-  
       if (!response.data.id) {
         throw new Error('El servidor no devolvió un ID válido');
       }
-  
-      // Limpiar formulario
+      
       setLocation('');
       setDescription('');
       setImage(null);
@@ -352,7 +346,11 @@ const CreatePost: React.FC<CreatePostProps> = ({
       onClose();
   
     } catch (err) {
-      setError('Error al crear la publicación. Por favor intenta nuevamente.');
+      showAlert({
+        title: 'Error',
+        message: 'Error al crear la publicación. Por favor intenta nuevamente.',
+        showCancel: false
+      });
       console.error('Error:', err);
     } finally {
       setIsLoading(false);

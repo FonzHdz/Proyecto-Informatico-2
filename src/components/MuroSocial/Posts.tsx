@@ -1,34 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import { Stomp } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import CommentsSection from './CommentSection';
 import styled from 'styled-components';
 import axios from 'axios';
-
-interface TaggedUser {
-  id: string;
-  name: string;
-}
-
-interface Post {
-  id: string;
-  authorName: string;
-  content: string;
-  filesURL: string;
-  date: string;
-  likes: number;
-  comments: number;
-  location?: string;
-  tags?: TaggedUser[];
-  userId: string;
-}
-
-interface PostsProps {
-  userId: string;
-  familyId: string;
-  posts: Post[];
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
-  currentUserName: string;
-}
 
 const Header = styled.div`
   background: linear-gradient(90deg, #4a90e2 0%, #7b1fa2 100%);
@@ -43,6 +19,58 @@ const Header = styled.div`
   z-index: 100;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   height: 60px;
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 14px;
+  padding: 5px;
+
+  &:hover {
+    color: #4a90e2;
+  }
+`;
+
+const LikeButton = styled(ActionButton)<{ liked?: boolean }>`
+  color: ${props => props.liked ? '#ff4757' : '#666'};
+
+  &:hover {
+    color: #ff4757;
+    
+    .fi {
+      transform: scale(1.1);
+    }
+  }
+`;
+
+const CommentButton = styled(ActionButton)`
+  &:hover {
+    color: #4a90e2;
+    
+    .fi {
+      transform: scale(1.1);
+    }
+  }
+`;
+
+const DeleteButton = styled(ActionButton)`
+  margin-left: auto;
+  transition: opacity 0.2s ease;
+  opacity: 0;
+
+  &:hover {
+    color: #ff4757;
+    
+    .fi {
+      transform: scale(1.1);
+    }
+  }
 `;
 
 const PostsContainer = styled.div`
@@ -61,6 +89,10 @@ const PostCard = styled.div`
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 20px;
+
+  &:hover ${DeleteButton} {
+    opacity: 1;
+  }
 `;
 
 const PostHeader = styled.div`
@@ -114,56 +146,6 @@ const PostActions = styled.div`
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #eee;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  font-size: 14px;
-  padding: 5px;
-
-  &:hover {
-    color: #4a90e2;
-  }
-`;
-
-const LikeButton = styled(ActionButton)<{ liked?: boolean }>`
-  color: ${props => props.liked ? '#ff4757' : '#666'};
-
-  &:hover {
-    color: #ff4757;
-    
-    .fi {
-      transform: scale(1.1);
-    }
-  }
-`;
-
-const CommentButton = styled(ActionButton)`
-  &:hover {
-    color: #4a90e2;
-    
-    .fi {
-      transform: scale(1.1);
-    }
-  }
-`;
-
-const DeleteButton = styled(ActionButton)`
-  margin-left: auto;
-
-  &:hover {
-    color: #ff4757;
-    
-    .fi {
-      transform: scale(1.1);
-    }
-  }
 `;
 
 const LoadingContainer = styled.div`
@@ -227,15 +209,64 @@ const UserTag = styled.div`
   }
 `;
 
+interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface TaggedUser {
+  id: string;
+  name: string;
+}
+
+interface Post {
+  id: string;
+  authorName: string;
+  content: string;
+  filesURL: string;
+  date: string;
+  likes: number;
+  comments: number;
+  location?: string;
+  tags?: TaggedUser[];
+  userId: string;
+}
+
+interface PostsProps {
+  userId: string;
+  familyId: string;
+  posts: Post[];
+  setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+  currentUserName: string;
+  currentUserRole: string;
+}
+
+
 const Posts: React.FC<PostsProps> = ({ 
   userId, 
   familyId,
   posts,
   setPosts,
-  currentUserName
+  currentUserName,
+  currentUserRole
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const { showAlert } = useAlert();
+
+  const fetchCommentsCount = async (postId: string) => {
+    try {
+      const response = await axios.get(`http://localhost:8070/comments/count/${postId}`);
+      return response.data; // Esto debería ser el número total de comentarios
+    } catch (error) {
+      console.error('Error fetching comments count:', error);
+      return 0; // Devuelve 0 si ocurre un error
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -245,8 +276,8 @@ const Posts: React.FC<PostsProps> = ({
         axios.get(`http://localhost:8070/publications/user/${userId}`),
         axios.get(`http://localhost:8070/publications/family/${familyId}`)
       ]);
-  
-      // Normalizar los datos para asegurar que todos los posts tengan userId
+
+      // Normalizar los posts para asegurarse de que todos los datos son consistentes
       const normalizePost = (post: any): Post => ({
         id: post.id,
         authorName: post.authorName,
@@ -257,27 +288,36 @@ const Posts: React.FC<PostsProps> = ({
         comments: post.comments || 0,
         location: post.location,
         tags: post.tags || [],
-        userId: post.userId || post.user?.id || '' // Asegurar que siempre haya userId
+        userId: post.userId || post.user?.id || ''
       });
-  
+
+      // Combina los posts de ambas fuentes (usuario y familia)
       const combinedPosts = [
         ...userPosts.data.map(normalizePost),
         ...familyPosts.data.map(normalizePost)
       ];
-      
-      // Eliminar duplicados
+
+      // Elimina posts duplicados
       const uniquePosts = combinedPosts.filter(
         (post, index, self) => index === self.findIndex(p => p.id === post.id)
       );
-  
-      // Ordenar por fecha
+
+      // Ordena los posts por fecha (más recientes primero)
       const sortedPosts = uniquePosts.sort((a, b) => {
         const dateA = parseDate(a.date);
         const dateB = parseDate(b.date);
         return dateB.getTime() - dateA.getTime();
       });
-  
-      setPosts(sortedPosts);
+
+      // Obtener la cantidad de comentarios para cada post
+      const postsWithCommentCount = await Promise.all(
+        sortedPosts.map(async (post: Post) => {
+          const commentsCount = await fetchCommentsCount(post.id);
+          return { ...post, comments: commentsCount }; // Agregar el número de comentarios
+        })
+      );
+
+      setPosts(postsWithCommentCount); // Actualiza el estado de los posts con la cantidad de comentarios
       setError(null);
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -294,26 +334,55 @@ const Posts: React.FC<PostsProps> = ({
   }, [userId, familyId]);
 
   useEffect(() => {
+    if (familyId) {
+      const fetchFamilyMembers = async () => {
+        try {
+          const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+          setFamilyMembers(response.data);
+        } catch (error) {
+          console.error('Error fetching family members:', error);
+        }
+      };
+      fetchFamilyMembers();
+    }
+  }, [familyId]);
+
+  useEffect(() => {
     const socket = new SockJS('http://localhost:8070/ws');
     const stompClient = Stomp.over(socket);
   
     stompClient.connect({}, () => {
+      // Suscripción para nuevos posts
       stompClient.subscribe('/topic/posts', (message) => {
         const newPost = JSON.parse(message.body);
         setPosts(prev => {
-          // Verificar si el post ya existe para evitar duplicados
           const postExists = prev.some(post => post.id === newPost.id);
           return postExists ? prev : [newPost, ...prev];
         });
       });
       
+      // Suscripción para posts eliminados
       stompClient.subscribe('/topic/postDeleted', (message) => {
         const deletedPostId = message.body;
         setPosts(prev => prev.filter(post => post.id !== deletedPostId));
       });
+      
+      // Suscripción para actualización de contadores
+      stompClient.subscribe('/topic/commentsCount', (message) => {
+        const { postId, count } = JSON.parse(message.body);
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === postId ? { ...post, comments: count } : post
+          )
+        );
+      });
     });
   
-    return () => stompClient.disconnect();
+    return () => {
+      if (stompClient.connected) {
+        stompClient.disconnect();
+      }
+    };
   }, []);
 
   const parseDate = (dateString: string) => {
@@ -344,14 +413,19 @@ const Posts: React.FC<PostsProps> = ({
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!postId || !window.confirm('¿Eliminar esta publicación?')) return;
+    const confirmed = await showAlert({
+      title: 'Eliminar publicación',
+      message: '¿Estás seguro de que quieres eliminar esta publicación?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    });
+    
+    if (!confirmed || !postId) return;
     
     try {
-      // Asegúrate de que la URL coincida exactamente con el endpoint del backend
       await axios.delete(`http://localhost:8070/publications/delete/${postId}`);
       setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       
-      // Opcional: Notificar a través de WebSocket
       const socket = new SockJS('http://localhost:8070/ws');
       const stompClient = Stomp.over(socket);
       stompClient.connect({}, () => {
@@ -360,7 +434,11 @@ const Posts: React.FC<PostsProps> = ({
       
     } catch (err) {
       console.error('Error deleting post:', err);
-      alert('Error al eliminar la publicación');
+      showAlert({
+        title: 'Error',
+        message: 'Error al eliminar la publicación',
+        showCancel: false
+      });
     }
   };
 
@@ -374,6 +452,11 @@ const Posts: React.FC<PostsProps> = ({
   );
 
   if (error) return <div>{error}</div>;
+
+  const handleCommentClick = (postId: string) => {
+    setSelectedPostId(postId);
+    setShowComments(true);
+  };
 
   return (
     <>
@@ -449,26 +532,41 @@ const Posts: React.FC<PostsProps> = ({
                   <i className="fi fi-rr-heart"></i>
                   <span>{post.likes || 0}</span>
                 </LikeButton>
-                
-                <CommentButton>
+
+                <CommentButton onClick={() => handleCommentClick(post.id)}>
                   <i className="fi fi-rr-comment"></i>
                   <span>{post.comments || 0}</span>
                 </CommentButton>
                 
-                {post.userId && userId && post.userId.toString() === userId.toString() && (
-                <DeleteButton onClick={() => handleDeletePost(post.id)}>
-                  <i className="fi fi-rr-trash"></i>
-                </DeleteButton>
-              )}
+                {(post.userId && userId && (post.userId.toString() === userId.toString() || currentUserRole === 'Madre' || currentUserRole === 'Padre')) && (
+                  <DeleteButton onClick={() => handleDeletePost(post.id)}>
+                    <i className="fi fi-rr-trash"></i>
+                  </DeleteButton>
+                )}
               </PostActions>
             </PostCard>
           ))
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            No hay publicaciones aún
+          <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
+            No hay publicaciones todavía
           </div>
         )}
       </PostsContainer>
+      {showComments && selectedPostId && (
+        <CommentsSection
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          postId={selectedPostId}
+          setPosts={setPosts}
+          currentUser={{
+            id: userId,
+            firstName: currentUserName.split(' ')[0],
+            lastName: currentUserName.split(' ')[1] || '',
+            role: currentUserRole
+          }}
+          familyMembers={familyMembers}
+        />
+      )}
     </>
   );
 };

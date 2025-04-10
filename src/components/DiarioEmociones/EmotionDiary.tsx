@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import styled from 'styled-components';
 import CreateEmotion from './CreateEmotion';
 import EditEmotion from './EditEmotion';
@@ -203,8 +204,8 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingEmotion, setEditingEmotion] = useState<EmotionEntry | null>(null);
+  const { showAlert } = useAlert();
 
-  // Cargar emociones del usuario
   useEffect(() => {
     const fetchEmotions = async () => {
       try {
@@ -218,9 +219,9 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
           date: item.date,
           image: item.fileUrl,
           description: item.description,
-          creationDate: new Date(item.date) // Convertir a Date para ordenar
+          creationDate: new Date(item.date)
         }))
-        .sort((a: any, b: any) => a.creationDate - b.creationDate); // Orden ascendente
+        .sort((a: any, b: any) => a.creationDate - b.creationDate);
         
         setEmotions(formattedEmotions);
         setError(null);
@@ -249,7 +250,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
           description: item.description,
           creationDate: new Date(item.date),
         }))
-        .sort((a: any, b: any) => b.creationDate - a.creationDate); // Más reciente primero
+        .sort((a: any, b: any) => b.creationDate - a.creationDate);
   
       setEmotions(formattedEmotions);
       setError(null);
@@ -261,16 +262,25 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
   
 
   const handleDeleteEmotion = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta emoción?')) {
-      return;
-    }
+    const confirmed = await showAlert({
+      title: 'Eliminar emoción',
+      message: '¿Estás seguro de que quieres eliminar esta emoción?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    });
+    
+    if (!confirmed) return;
     
     try {
       await axios.delete(`http://localhost:8070/emotion/delete/${id}`);
       setEmotions(prev => prev.filter(emotion => emotion.id !== id));
     } catch (err) {
       console.error('Error al eliminar la emoción:', err);
-      alert('Error al eliminar la emoción');
+      showAlert({
+        title: 'Error',
+        message: 'Error al eliminar la emoción',
+        showCancel: false
+      });
     }
   };
 

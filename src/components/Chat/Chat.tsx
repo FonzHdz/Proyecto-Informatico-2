@@ -4,31 +4,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import Message from './Message';
 import MessageInput from './MessageInput';
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  familyId?: string;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  date: string;
-  type: string;
-  state: string;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  fileURL?: string;
-  fileName?: string;
-  fileSize?: string;
-}
+import { useAlert } from '../../context/AlertContext';
 
 const ChatContainer = styled.div`
   display: flex;
@@ -110,6 +86,31 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  familyId?: string;
+}
+
+interface Message {
+  id: string;
+  content: string;
+  date: string;
+  type: string;
+  state: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  fileURL?: string;
+  fileName?: string;
+  fileSize?: string;
+}
+
 const Chat: React.FC<{ user: User }> = ({ user }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [stompClient, setStompClient] = useState<Client | null>(null);
@@ -117,7 +118,8 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isUploading, setIsUploading] = useState(false); 
+  const [isUploading, setIsUploading] = useState(false);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (!user?.familyId) {
@@ -284,15 +286,17 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
       xhr.onload = () => {
         if (xhr.status === 200) {
           const fileUrl = xhr.responseText;
-          
           let messageType: 'IMAGE' | 'VIDEO' | 'FILE' = 'FILE';
           if (type === 'image') messageType = 'IMAGE';
           if (type === 'video') messageType = 'VIDEO';
-          
           sendFileMessage(fileUrl, messageType, fileName, fileSize);
         } else {
           console.error('Upload failed');
-          alert('Error al subir el archivo');
+          showAlert({
+            title: 'Error',
+            message: 'Error al subir el archivo',
+            showCancel: false
+          });
         }
         setIsUploading(false);
         setUploadProgress(null);
@@ -302,7 +306,11 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
         console.error('Upload error');
         setIsUploading(false);
         setUploadProgress(null);
-        alert('Error al subir el archivo');
+        showAlert({
+          title: 'Error',
+          message: 'Error al subir el archivo',
+          showCancel: false
+        });
       };
       
       xhr.send(formData);
@@ -310,7 +318,11 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
       console.error('Error uploading file:', error);
       setIsUploading(false);
       setUploadProgress(null);
-      alert('Error al subir el archivo');
+      showAlert({
+        title: 'Error',
+        message: 'Error al subir el archivo',
+        showCancel: false
+      });
     }
   };
 
