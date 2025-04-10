@@ -20,7 +20,25 @@ public class CommentService {
         return commentRepository.findById(id);
     }
 
+    public List<Comment> getCommentsByPostId(UUID postId) {
+        return commentRepository.findByPostIdOrderByCreationDateDesc(postId);
+    }
+
+    public void deleteComment(UUID commentId) {
+        commentRepository.deleteById(commentId);
+    }
+
     public Comment createComment(Comment comment) {
+        if (comment.getContent() == null || comment.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("El contenido del comentario no puede estar vacío");
+        }
+        if (comment.getPostId() == null || comment.getUserId() == null) {
+            throw new IllegalArgumentException("Post ID y User ID son requeridos");
+        }
         return commentRepository.save(comment);
+    }
+
+    public long getCommentsCountByPostId(UUID postId) {
+        return commentRepository.countByPostId(postId); // Usamos el método countByPostId
     }
 }

@@ -2,10 +2,12 @@ package com.harmoniChat.app_hc.api.v1.controllers.user;
 
 import ch.qos.logback.classic.Logger;
 import com.harmoniChat.app_hc.entities_repositories_and_services.email.EmailService;
+import com.harmoniChat.app_hc.entities_repositories_and_services.email.EmailVerificationService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.Family;
 import com.harmoniChat.app_hc.entities_repositories_and_services.family.FamilyRepository;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 import com.harmoniChat.app_hc.entities_repositories_and_services.user.UserService;
+import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
@@ -24,13 +26,16 @@ public class UserController {
     private final UserService userService;
     private final FamilyRepository familyRepository;
     private final EmailService emailService;
+    private final EmailVerificationService emailVerificationService;
 
     public UserController(UserService userService,
                           FamilyRepository familyRepository,
-                          EmailService emailService) {
+                          EmailService emailService,
+                          EmailVerificationService emailVerificationService) {
         this.userService = userService;
         this.familyRepository = familyRepository;
         this.emailService = emailService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @PostMapping("/register")
@@ -91,6 +96,13 @@ public class UserController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            if (!emailVerificationService.verifyEmail(request.getEmail())) {
+                response.put("success", false);
+                response.put("message", "El correo electrónico no es válido o no existe");
+                response.put("errorType", "email");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Validación de email único
             if (userService.existsByEmail(request.getEmail())) {
                 response.put("success", false);
@@ -117,6 +129,8 @@ public class UserController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            emailService.sendRegistrationEmail(request.getEmail(), request.getFirstName());
+
             // Creación del usuario
             User user = new User();
             user.setFirstName(request.getFirstName());
@@ -138,9 +152,6 @@ public class UserController {
                     familyCode = registeredUser.getFamilyId().getInviteCode();
                 }
             }
-
-            // Envío de correos
-            emailService.sendRegistrationEmail(registeredUser.getEmail(), registeredUser.getFirstName());
 
             // Preparar respuesta exitosa
             response.put("success", true);
@@ -185,6 +196,22 @@ public class UserController {
         }
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<Map<String, Object>> verifyEmail(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        String email = request.get("email");
+
+        if (email == null || email.isEmpty()) {
+            response.put("valid", false);
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        boolean isValid = emailVerificationService.verifyEmail(email);
+        response.put("valid", isValid);
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> loginUser(@RequestBody LoginRequest loginRequest) {
         Map<String, Object> response = new HashMap<>();
@@ -215,6 +242,7 @@ public class UserController {
             userData.put("lastName", user.getLastName());
             userData.put("email", user.getEmail());
             userData.put("role", user.getRole());
+            userData.put("gender", user.getGender());
             // Añadir familyId (puede ser null)
             if (user.getFamilyId() != null) {
                 if (user.getFamilyId() instanceof Family) {
