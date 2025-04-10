@@ -52,4 +52,5 @@
 
 .swal2-popup {
     font-family: 'Inter', sans-serif !important;
+    backdrop-filter: blur(1px);
 }

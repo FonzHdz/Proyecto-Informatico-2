@@ -19,7 +19,6 @@ setInterval(() => {
 
 updateCarousel();
 
-// Funciones para notificaciones Toast
 function showSuccessToast(message) {
     const Toast = Swal.mixin({
         toast: true,
@@ -86,7 +85,6 @@ function showInfoToast(message) {
     });
 }
 
-// Función principal de login
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -131,8 +129,17 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         
         await loader.close();
         
-        // Asegúrate de acceder a data.user.firstName
-        showSuccessToast(`Bienvenido ${data.user.firstName}!`);
+        const gender = data.user.gender;
+        console.log('Usuario:', gender);
+        if (gender === 'Masculino') {
+            showSuccessToast(`¡Bienvenido ${data.user.firstName}!`);
+        }
+        if (gender === 'Femenino') {
+            showSuccessToast(`¡Bienvenida ${data.user.firstName}!`);
+        }
+        if (gender === 'Otro') {
+            showSuccessToast(`¡Bienvenido a HarmoniChat!`);
+        }
         
         // Almacenar solo el objeto user
         localStorage.setItem('harmonichat_user', JSON.stringify(data.user));
@@ -149,7 +156,6 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     }
 });
 
-// Evento para mostrar/ocultar contraseña
 document.querySelector('.fi-ss-eye-crossed').addEventListener('click', function() {
     const passwordInput = document.getElementById('password');
     const icon = this;

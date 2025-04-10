@@ -215,7 +215,7 @@ async function registrarUsuario() {
         await loader.close();
         
         // Mostrar notificación de éxito
-        showSuccessToast('Registro exitoso!');
+        showSuccessToast('¡Registro exitoso!');
         
         // Manejo del código de invitación
         if ((formData.role === 'Padre' || formData.role === 'Madre') && !formData.inviteCode) {
