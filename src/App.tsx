@@ -7,6 +7,7 @@ import Filters from './components/MuroSocial/Filters';
 import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
 import Chat from './components/Chat/Chat';
 import axios from 'axios';
+import Profile from './components/Profile/Profile';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -212,6 +213,7 @@ interface User {
   email: string;
   role: string;
   familyId: string; 
+  phone_number: string;
 }
 
 function App() {
@@ -411,6 +413,8 @@ function App() {
             </FiltersArea>
           </>
         );
+      case 'profile':
+        return <Profile user={currentUser} />;
       default:
         return (
           <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
