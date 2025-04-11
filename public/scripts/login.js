@@ -19,6 +19,7 @@ setInterval(() => {
 
 updateCarousel();
 
+// Funciones para notificaciones Toast
 function showSuccessToast(message) {
     const Toast = Swal.mixin({
         toast: true,
@@ -30,11 +31,13 @@ function showSuccessToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#f0fdf4',
-        iconColor: '#16a34a',
-        color: '#166534'
+        background: '#4caf50', // Color de fondo verde
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
     });
-    
+
     Toast.fire({
         icon: 'success',
         title: message
@@ -52,14 +55,40 @@ function showErrorToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#fef2f2',
-        iconColor: '#dc2626',
-        color: '#b91c1c'
+        background: '#f87171', // Color de fondo rojo
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
     });
     
     Toast.fire({
         icon: 'error',
-        title: message
+        title: message || 'Error occurred!'
+    });
+}
+
+function showInfoToast(message) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        },
+        background: '#007bff', // Color de fondo azul
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
+    });
+    
+    Toast.fire({
+        icon: 'info',
+        title: message || 'Information message!' 
     });
 }
 
