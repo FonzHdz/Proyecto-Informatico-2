@@ -31,11 +31,13 @@ function showSuccessToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#f0fdf4',
-        iconColor: '#16a34a',
-        color: '#166534'
+        background: '#4caf50', // Color de fondo verde
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
     });
-    
+
     Toast.fire({
         icon: 'success',
         title: message
@@ -53,14 +55,16 @@ function showErrorToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#fef2f2',
-        iconColor: '#dc2626',
-        color: '#b91c1c'
+        background: '#f87171', // Color de fondo rojo
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
     });
     
     Toast.fire({
         icon: 'error',
-        title: message
+        title: message || 'Error occurred!'
     });
 }
 
@@ -75,18 +79,75 @@ function showInfoToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#eff6ff',
-        iconColor: '#2563eb',
-        color: '#1e40af'
+        background: '#007bff', // Color de fondo azul
+        iconColor: '#fff', // Color del ícono blanco
+        color: '#fff', // Color del texto blanco
+        padding: '20px', // Espaciado
+        borderRadius: '8px' // Bordes redondeados
     });
     
     Toast.fire({
         icon: 'info',
-        title: message
+        title: message || 'Information message!' 
     });
 }
 
 // Funciones de validación
+
+// Validar que no haya campos en blanco
+function validarCamposNoVacios() {
+    const fields = [
+        document.getElementById('firstName'),
+        document.getElementById('lastName'),
+        document.getElementById('gender'),
+        document.getElementById('documentType'),
+        document.getElementById('documentNumber'),
+        document.getElementById('phoneNumber'),
+        document.getElementById('email'),
+        document.getElementById('role'),
+        document.getElementById('password'),
+        document.getElementById('confirmPassword')
+    ];
+
+    for (const field of fields) {
+        if (!field.value.trim()) {
+            showErrorToast(`El campo ${field.previousElementSibling.innerText} no puede estar vacío.`);
+            return false;
+        }
+    }
+    return true;
+}
+
+// Validar Nombre y Apellido
+function validarNombreApellido(nombre) {
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,50}$/;
+    return regex.test(nombre);
+}
+
+// Validar Número de Documento
+function validarNumeroDocumento(numero) {
+    const regex = /^\d{10}$/; // 10 dígitos
+    return regex.test(numero);
+}
+
+// Validar Teléfono
+function validarTelefono(telefono) {
+    const regex = /^\d{7,10}$/; // 7 o 10 dígitos
+    return regex.test(telefono);
+}
+
+// Validar Correo Electrónico
+function validarCorreo(correo) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Formato estándar de correo
+    return regex.test(correo) && correo.length <= 100;
+}
+
+// Validar Contraseña
+function validarContraseña(password) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/;
+    return regex.test(password);
+}
+
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
@@ -171,8 +232,60 @@ async function validarContraseñas() {
     return true;
 }
 
-// Función principal de registro
+// Manejar la apertura y cierre del modal de políticas
+document.getElementById('openPolicies').addEventListener('click', function(event) {
+    event.preventDefault(); // Evitar el comportamiento por defecto del enlace
+    document.getElementById('policiesModal').classList.remove('hidden');
+});
+
+document.getElementById('closePolicies').addEventListener('click', function(event) {
+    event.preventDefault(); // Evitar el comportamiento por defecto del botón
+    document.getElementById('policiesModal').classList.add('hidden');
+});
+
+// Modificar la función de registro para verificar la aceptación de políticas
 async function registrarUsuario() {
+    // Validar campos no vacíos
+    if (!validarCamposNoVacios()) return;
+
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    const documentNumber = document.getElementById('documentNumber').value;
+    const phoneNumber = document.getElementById('phoneNumber').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    // Validaciones
+    if (!validarNombreApellido(firstName)) {
+        showErrorToast('El nombre debe tener entre 2 y 50 caracteres y solo contener letras.');
+        return;
+    }
+    if (!validarNombreApellido(lastName)) {
+        showErrorToast('El apellido debe tener entre 2 y 50 caracteres y solo contener letras.');
+        return;
+    }
+    if (!validarNumeroDocumento(documentNumber)) {
+        showErrorToast('El número de documento debe tener exactamente 10 dígitos.');
+        return;
+    }
+    if (!validarTelefono(phoneNumber)) {
+        showErrorToast('El teléfono debe tener 7 o 10 dígitos.');
+        return;
+    }
+    if (!validarCorreo(email)) {
+        showErrorToast('El correo electrónico no es válido o excede los 100 caracteres.');
+        return;
+    }
+    if (!validarContraseña(password)) {
+        showErrorToast('La contraseña debe tener entre 8 y 20 caracteres, incluyendo al menos una letra mayúscula, una letra minúscula, un número y un carácter especial.');
+        return;
+    }
+    // Validar que se acepten las políticas
+    if (!document.getElementById('acceptPolicies').checked) {
+        showErrorToast('Debes aceptar las políticas de privacidad para registrarte.');
+        return;
+    }
+
     // Validar contraseñas primero
     if (!await validarContraseñas()) return;
     
@@ -201,7 +314,14 @@ async function registrarUsuario() {
     // Mostrar loader durante el registro
     const loader = Swal.fire({
         title: 'Registrando usuario',
-        html: 'Por favor espera...',
+        html: `
+            <div class="loader-container">
+                <svg id="loaderHeart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100" height="100">
+                    <path class="heart-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <div>Por favor espera...</div>
+            </div>
+        `,
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();

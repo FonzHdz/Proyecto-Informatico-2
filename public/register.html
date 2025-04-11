@@ -52,23 +52,27 @@
                     </div>
                     
                     <div class="mb-4">
+                        <!-- Género -->
                         <label class="block text-sm font-medium text-gray-700">Género</label>
                         <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
-                                id="gender" required>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                            <option value="Otro">Otro</option>
+                        id="gender" required>
+                        <option value="">Seleccionar</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                        <option value="Otro">Otro</option>
                         </select>
                     </div>
                     
                     <!-- Documentación -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                        <!-- Tipo de Documento -->
                         <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
-                                id="documentType" required>
-                            <option value="CC">Cédula de Ciudadanía</option>
-                            <option value="TI">Tarjeta de Identidad</option>
-                            <option value="CE">Cédula de Extranjería</option>
+                        id="documentType" required>
+                        <option value="">Seleccionar</option>
+                        <option value="CC">Cédula de Ciudadanía</option>
+                        <option value="TI">Tarjeta de Identidad</option>
+                        <option value="CE">Cédula de Extranjería</option>
                         </select>
                     </div>
                     
@@ -140,6 +144,29 @@
                                 Copiar
                             </button>
                         </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="acceptPolicies" class="rounded border-gray-300 text-[#5F3195] focus:ring-[#5F3195]" required>
+                            <span class="ml-2 text-sm text-gray-700">He leído y acepto las <a href="#" id="openPolicies" class="text-[#5F3195] underline">políticas de privacidad</a>.</span>
+                        </label>
+                    </div>
+
+                    <!-- Modal para las políticas de privacidad -->
+                    <div id="policiesModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+                        <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+                            <h2 class="text-xl font-bold mb-4">Políticas de Privacidad</h2>
+                            <p class="mb-4">
+                                Autorizo de manera previa, expresa e informada a <strong>HarmoniChat</strong>, en calidad de responsable del tratamiento, para que recolecte, almacene, use y trate mis datos personales con la finalidad de <strong>tener una experiencia más personalizada</strong>, de conformidad con la Ley 1581 de 2012, el Decreto 1377 de 2013 y demás normas aplicables en Colombia.
+                            </p>
+                            <p class="mb-4">
+                                Entiendo que mis datos podrán ser utilizados para fines administrativos, comerciales, contractuales, laborales o cualquier otro que haya sido informado, y que tengo derecho a conocer, actualizar, rectificar y suprimir mis datos, así como a revocar esta autorización cuando lo desee.
+                            </p>
+                            <p class="mb-4">
+                                Esta autorización se otorga de forma voluntaria, previa y explícita, y permanecerá vigente mientras se mantenga la finalidad para la cual fue otorgada o hasta tanto sea revocada expresamente por el titular de la información.
+                            </p>
+                            <button id="closePolicies" class="bg-[#5F3195] text-white py-2 px-4 rounded">Cerrar</button>
+                        </div>                        
                     </div>
                     
                     <!-- Botón de registro -->

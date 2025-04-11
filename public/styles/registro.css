@@ -1,3 +1,8 @@
+
+#policiesModal {
+    z-index: 1000; 
+}
+
 .carousel {
     display: flex;
     overflow: hidden;
@@ -53,4 +58,34 @@
 .swal2-popup {
     font-family: 'Inter', sans-serif !important;
     backdrop-filter: blur(1px);
+}
+
+#loaderHeart {
+    animation: beat 1s infinite;
+}
+
+@keyframes beat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.heart-path {
+    fill: #5F3195; /* Color del corazón */
+    transition: fill 0.3s ease; /* Transición suave para el color */
 }
