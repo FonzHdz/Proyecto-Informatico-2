@@ -78,9 +78,10 @@ public class PostController {
                     .authorName(author.getFirstName() + " " + author.getLastName())
                     .content(savedPost.getDescription())
                     .filesURL(savedPost.getFilesURL())
-                    .date(savedPost.getCreationDate().format(formatter))
+                    .date(savedPost.getCreationDate().format(formatter)) // Formato legible
+                    .rawDate(savedPost.getCreationDate().toString()) // Formato ISO para ordenamiento
                     .location(savedPost.getLocation())
-                    .likes(0) // Puedes ajustar estos valores según tu lógica
+                    .likes(0)
                     .comments(0)
                     .userId(savedPost.getUserId())
                     .build();
@@ -142,6 +143,7 @@ public class PostController {
                 .content(post.getDescription())
                 .filesURL(post.getFilesURL())
                 .date(post.getCreationDate().format(formatter))
+                .rawDate(post.getCreationDate().toString())
                 .location(post.getLocation())
                 .likes(0)
                 .comments(0)
@@ -183,6 +185,7 @@ public class PostController {
             String content,
             String filesURL,
             String date,
+            String rawDate,
             String location,
             Integer likes,
             Integer comments,
@@ -200,6 +203,7 @@ public class PostController {
                 .id(post.getId())
                 .authorName(author.getFirstName() + " " + author.getLastName())
                 .date(post.getCreationDate().format(formatter))
+                .rawDate(post.getCreationDate().toString())
                 .filesURL(post.getFilesURL())
                 .content(post.getDescription())
                 .location(post.getLocation())
