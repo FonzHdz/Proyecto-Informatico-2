@@ -102,7 +102,7 @@ const TextArea = styled.textarea`
 
 const ImagePreview = styled.div`
   width: 100%;
-  height: 180px;
+  height: 200px;
   border: 1px dashed #ddd;
   border-radius: 8px;
   display: flex;

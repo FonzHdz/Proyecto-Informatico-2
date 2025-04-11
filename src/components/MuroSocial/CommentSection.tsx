@@ -247,6 +247,7 @@ export interface Post {
   content: string;
   filesURL: string;
   date: string;
+  rawDate: string;
   likes: number;
   comments: number;
   location?: string;
@@ -318,36 +319,34 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   useEffect(() => {
     if (!isOpen || !postId) return;
-
+  
     const socket = new SockJS('http://localhost:8070/ws');
     const stompClient = Stomp.over(socket);
-
+  
     stompClient.connect({}, () => {
-      stompClient.subscribe(`/topic/comments/${postId}`, (message) => {
+      const subscription = stompClient.subscribe(`/topic/comments/${postId}`, (message) => {
         const newCommentFromSocket = JSON.parse(message.body);
         setComments(prevComments => {
-          const updated = [newCommentFromSocket, ...prevComments];
-          return updated.filter((item, index, self) =>
-            index === self.findIndex((c) => c.id === item.id)
-          );
+          // Evita duplicados
+          if (prevComments.some(c => c.id === newCommentFromSocket.id)) {
+            return prevComments;
+          }
+          return [newCommentFromSocket, ...prevComments];
         });
-        
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post.id === postId 
-              ? { ...post, comments: post.comments + 1 } 
-              : post
-          )
-        );
       });
+  
+      return () => {
+        subscription.unsubscribe();
+        stompClient.disconnect();
+      };
     });
-
+  
     return () => {
       if (stompClient.connected) {
         stompClient.disconnect();
       }
     };
-  }, [isOpen, postId, setPosts]);
+  }, [isOpen, postId]);
 
   const fetchComments = async () => {
     try {
@@ -388,47 +387,54 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         const deletedPostId = message.body;
         setPosts(prev => prev.filter(post => post.id !== deletedPostId));
       });
+    });
 
-      // Suscripción para actualización de contador de comentarios
-      stompClient.subscribe('/topic/commentsCount', (message) => {
-        const { postId, count } = JSON.parse(message.body);
+    return () => stompClient.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !postId) return;
+  
+    const socket = new SockJS('http://localhost:8070/ws');
+    const stompClient = Stomp.over(socket);
+  
+    stompClient.connect({}, () => {
+      const countSubscription = stompClient.subscribe(`/topic/commentsCount/${postId}`, (message) => {
+        const { count } = JSON.parse(message.body);
         setPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === postId ? { ...post, comments: count } : post
           )
         );
       });
+  
+      return () => {
+        countSubscription.unsubscribe();
+        stompClient.disconnect();
+      };
     });
-
-    return () => stompClient.disconnect();
-  }, []);
+  
+    return () => {
+      if (stompClient.connected) {
+        stompClient.disconnect();
+      }
+    };
+  }, [isOpen, postId, setPosts]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-
+  
     try {
       setIsSubmitting(true);
-      const response = await axios.post('http://localhost:8070/comments/send', {
+      await axios.post('http://localhost:8070/comments/send', {
         content: newComment,
         postId,
         userId: currentUser.id
       });
-
-      setComments(prev => {
-        const updated = [response.data, ...prev];
-        return updated.filter((item, index, self) =>
-          index === self.findIndex((c) => c.id === item.id)
-        );
-      });
+  
       setNewComment('');
       setShowEmojiPicker(false);
-
-      setPosts(prevPosts =>
-        prevPosts.map(post =>
-          post.id === postId ? { ...post, comments: post.comments + 1 } : post
-        )
-      );
     } catch (error) {
       console.error('Error posting comment:', error);
       showAlert({

@@ -84,19 +84,27 @@ const TextArea = styled.textarea`
   }
 `;
 
-const ImagePreview = styled.div`
+const MediaPreview = styled.div<{ hasMedia: boolean }>`
   width: 100%;
-  height: 150px;
+  height: 200px;
   border: 2px dashed #ddd;
   border-radius: 6px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  background-size: cover;
+  background-size: ${props => props.hasMedia ? 'cover' : 'auto'};
   background-position: center;
   color: #666;
   font-size: 14px;
+  overflow: hidden;
+  position: relative;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 `;
 
 const MentionsContainer = styled.div`
@@ -209,6 +217,11 @@ const Button = styled.button`
   }
 `;
 
+interface FilePreview {
+  url: string;
+  type: 'image' | 'video';
+}
+
 interface FamilyMember {
   id: string;
   firstName: string;
@@ -239,7 +252,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
   const [mentionSearch, setMentionSearch] = useState('');
   const [showMentions, setShowMentions] = useState(false);
   const [selectedMentions, setSelectedMentions] = useState<FamilyMember[]>([]);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [filePreview, setFilePreview] = useState<FilePreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { showAlert } = useAlert();
@@ -268,7 +281,14 @@ const CreatePost: React.FC<CreatePostProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImage(file);
-      setImagePreviewUrl(URL.createObjectURL(file));
+      
+      const fileType = file.type.split('/')[0]; // 'image' o 'video'
+      if (fileType === 'image' || fileType === 'video') {
+        setFilePreview({
+          url: URL.createObjectURL(file),
+          type: fileType
+        });
+      }
     }
   };
 
@@ -340,7 +360,9 @@ const CreatePost: React.FC<CreatePostProps> = ({
       setLocation('');
       setDescription('');
       setImage(null);
-      setImagePreviewUrl('');
+      if (filePreview) {
+        URL.revokeObjectURL(filePreview.url);
+      }
       setSelectedMentions([]);
       
       onClose();
@@ -376,14 +398,25 @@ const CreatePost: React.FC<CreatePostProps> = ({
               id="image-input"
             />
             <label htmlFor="image-input">
-              <ImagePreview
-                style={imagePreviewUrl ? { 
-                  backgroundImage: `url(${imagePreviewUrl})`,
-                  color: 'transparent'
-                } : {}}
-              >
-                {!imagePreviewUrl && 'Haz clic para agregar un archivo multimedia'}
-              </ImagePreview>
+            <MediaPreview hasMedia={!!filePreview}>
+              {filePreview ? (
+                filePreview.type === 'image' ? (
+                  <img 
+                    src={filePreview.url} 
+                    alt="Preview" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <video 
+                    src={filePreview.url} 
+                    controls={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )
+              ) : (
+                'Haz clic para agregar un archivo multimedia'
+              )}
+            </MediaPreview>
             </label>
           </FormSection>
           

@@ -96,7 +96,7 @@ const TextArea = styled.textarea`
 
 const ImagePreview = styled.div`
   width: 100%;
-  height: 180px;
+  height: 200px;
   border: 1px dashed #ddd;
   border-radius: 8px;
   display: flex;
@@ -125,6 +125,7 @@ const Button = styled.button`
   font-size: 15px;
   font-weight: 500;
   transition: all 0.2s;
+  margin-top: 20px;
 
   &:hover {
     opacity: 0.95;

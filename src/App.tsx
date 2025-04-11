@@ -199,6 +199,7 @@ interface Post {
   content: string;
   filesURL: string;
   date: string;
+  rawDate: string;
   likes: number;
   comments: number;
   location?: string;

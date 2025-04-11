@@ -226,6 +226,7 @@ interface Post {
   content: string;
   filesURL: string;
   date: string;
+  rawDate: string;
   likes: number;
   comments: number;
   location?: string;
@@ -268,6 +269,21 @@ const Posts: React.FC<PostsProps> = ({
     }
   };
 
+  // Normalizar los posts para asegurarse de que todos los datos son consistentes
+  const normalizePost = (post: any): Post => ({
+    id: post.id,
+    authorName: post.authorName,
+    content: post.content,
+    filesURL: post.filesURL,
+    date: post.date,
+    rawDate: post.rawDate || post.creationDate || new Date().toISOString(),
+    likes: post.likes || 0,
+    comments: post.comments || 0,
+    location: post.location,
+    tags: post.tags || [],
+    userId: post.userId || post.user?.id || ''
+  });
+
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
@@ -276,20 +292,6 @@ const Posts: React.FC<PostsProps> = ({
         axios.get(`http://localhost:8070/publications/user/${userId}`),
         axios.get(`http://localhost:8070/publications/family/${familyId}`)
       ]);
-
-      // Normalizar los posts para asegurarse de que todos los datos son consistentes
-      const normalizePost = (post: any): Post => ({
-        id: post.id,
-        authorName: post.authorName,
-        content: post.content,
-        filesURL: post.filesURL,
-        date: post.date,
-        likes: post.likes || 0,
-        comments: post.comments || 0,
-        location: post.location,
-        tags: post.tags || [],
-        userId: post.userId || post.user?.id || ''
-      });
 
       // Combina los posts de ambas fuentes (usuario y familia)
       const combinedPosts = [
@@ -304,9 +306,9 @@ const Posts: React.FC<PostsProps> = ({
 
       // Ordena los posts por fecha (más recientes primero)
       const sortedPosts = uniquePosts.sort((a, b) => {
-        const dateA = parseDate(a.date);
-        const dateB = parseDate(b.date);
-        return dateB.getTime() - dateA.getTime();
+        const dateA = a.rawDate ? new Date(a.rawDate) : parseDate(a.date);
+        const dateB = b.rawDate ? new Date(b.rawDate) : parseDate(b.date);
+        return dateB.getTime() - dateA.getTime(); // Más reciente primero
       });
 
       // Obtener la cantidad de comentarios para cada post
@@ -352,12 +354,23 @@ const Posts: React.FC<PostsProps> = ({
     const stompClient = Stomp.over(socket);
   
     stompClient.connect({}, () => {
-      // Suscripción para nuevos posts
       stompClient.subscribe('/topic/posts', (message) => {
         const newPost = JSON.parse(message.body);
         setPosts(prev => {
-          const postExists = prev.some(post => post.id === newPost.id);
-          return postExists ? prev : [newPost, ...prev];
+          // Si el post ya existe, mantenemos el orden actual
+          if (prev.some(post => post.id === newPost.id)) return prev;
+          
+          // Normaliza el nuevo post para asegurar consistencia
+          const normalizedPost = normalizePost(newPost);
+          // Si el post tiene un ID que ya existe, lo reemplazamos
+          
+          // Inserta en la posición correcta manteniendo el orden
+          return [...prev, normalizedPost]
+            .sort((a, b) => {
+              const dateA = a.rawDate ? new Date(a.rawDate) : parseDate(a.date);
+              const dateB = b.rawDate ? new Date(b.rawDate) : parseDate(b.date);
+              return dateB.getTime() - dateA.getTime();
+            });
         });
       });
       
@@ -385,22 +398,27 @@ const Posts: React.FC<PostsProps> = ({
     };
   }, []);
 
-  const parseDate = (dateString: string) => {
-    if (!dateString) return new Date();
+  const parseDate = (dateString: string): Date => {
+    // Intenta parsear como ISO primero
+    const isoDate = new Date(dateString);
+    if (!isNaN(isoDate.getTime())) return isoDate;
     
+    // Si falla, usa el formato legible como respaldo
     const [datePart, timePart] = dateString.split(' ');
     const [day, month, year] = datePart.split('/');
-    const [time, modifier] = timePart.split(' ');
+    const [time, modifier] = timePart.includes('a. m.') || timePart.includes('p. m.') 
+      ? timePart.split(' ') 
+      : [timePart, ''];
+    
     let [hours, minutes] = time.split(':');
     
-    if (modifier === 'p. m.' && hours !== '12') {
+    if (modifier.includes('p. m.') && hours !== '12') {
       hours = String(Number(hours) + 12);
-    }
-    if (modifier === 'a. m.' && hours === '12') {
+    } else if (modifier.includes('a. m.') && hours === '12') {
       hours = '00';
     }
-  
-    return new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
+    
+    return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes}:00`);
   };
 
   const isEmptyFile = (file: any): boolean => {
