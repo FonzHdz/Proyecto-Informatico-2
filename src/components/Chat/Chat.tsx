@@ -92,7 +92,7 @@ interface User {
   lastName: string;
   email: string;
   role: string;
-  familyId?: string;
+  familyId: string | { id: string };
 }
 
 interface Message {
@@ -131,7 +131,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
       webSocketFactory: () => new SockJS('http://localhost:8070/ws'),
       connectHeaders: {
         'user-id': user.id,
-        'family-id': user.familyId
+        'family-id': typeof user.familyId === 'string' ? user.familyId : user.familyId.id
       },
       debug: (str) => console.debug(str),
       reconnectDelay: 5000,

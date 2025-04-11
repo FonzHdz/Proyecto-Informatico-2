@@ -5,9 +5,9 @@ import Posts from './components/MuroSocial/Posts';
 import CreatePost from './components/MuroSocial/CreatePost';
 import Filters from './components/MuroSocial/Filters';
 import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
+import Profile from './components/Perfil/Profile';
 import Chat from './components/Chat/Chat';
 import axios from 'axios';
-import Profile from './components/Profile/Profile';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -212,8 +212,8 @@ interface User {
   lastName: string;
   email: string;
   role: string;
-  familyId: string; 
-  phone_number: string;
+  familyId: string | { id: string };
+  phoneNumber: string;
 }
 
 function App() {
@@ -300,6 +300,7 @@ function App() {
     if (filters.author) {
       if (filters.author === 'yo') {
         filteredPosts = filteredPosts.filter(post => post.userId === currentUserId);
+        console.log('currentUser en App.tsx:', currentUser);
       } else {
         filteredPosts = filteredPosts.filter(post => {
           const member = familyMembers.find(m => m.id === filters.author);
@@ -347,7 +348,8 @@ function App() {
 
   useEffect(() => {
     if (currentUser?.familyId) {
-      fetchFamilyMembers(currentUser.familyId);
+      const familyId = typeof currentUser.familyId === 'string' ? currentUser.familyId : currentUser.familyId.id;
+      fetchFamilyMembers(familyId);
     }
   }, [currentUser]);
 
@@ -414,7 +416,7 @@ function App() {
           </>
         );
       case 'profile':
-        return <Profile user={currentUser} />;
+        return <Profile user={currentUser} setUser={setCurrentUser} />;
       default:
         return (
           <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>

@@ -153,8 +153,8 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100px;
-  height: calc(100vh - 80px); /* Resta la altura del header */
-  margin-top: -15px; /* Compensa el padding del header */
+  height: calc(100vh - 80px);
+  margin-top: -15px;
 `;
 
 const LoadingSpinner = styled.div`
@@ -235,7 +235,7 @@ interface Post {
 
 interface PostsProps {
   userId: string;
-  familyId: string;
+  familyId: string | { id: string };
   posts: Post[];
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
   currentUserName: string;

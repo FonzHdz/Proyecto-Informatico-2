@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { useAlert } from '../../context/AlertContext';
 import styled from 'styled-components';
 import axios from 'axios';
+
+const Header = styled.div`
+  background: linear-gradient(90deg, #4a90e2 0%, #7b1fa2 100%);
+  padding: 15px 40px;
+  color: white;
+  font-size: 24px;
+  font-weight: 500;
+  position: fixed;
+  top: 0;
+  left: 80px;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 60px;
+`;
 
 const ProfileLayout = styled.div`
   display: flex;
@@ -261,8 +277,8 @@ interface User {
   lastName: string;
   email: string;
   role: string;
-  familyId: string;
-  phone_number?: string;
+  familyId: string | { id: string };
+  phoneNumber: string;
 }
 
 interface FamilyMember {
@@ -272,19 +288,26 @@ interface FamilyMember {
   role: string;
 }
 
-const Profile: React.FC<{ user: User }> = ({ user }) => {
+const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user, setUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [phoneError, setPhoneError] = useState('');
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const fetchFamilyMembers = async () => {
       try {
-        const response = await axios.get(`http://localhost:8070/family/${user.familyId}/members`);
+        const familyId = typeof user.familyId === 'string' ? user.familyId : user.familyId.id;
+        const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
         setFamilyMembers(response.data);
       } catch (error) {
         console.error('Error fetching family members:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudieron cargar los miembros de la familia.',
+          showCancel: false,
+        });
       }
     };
 
@@ -295,7 +318,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
     const value = e.target.value;
     // Permite solo números y algunos caracteres especiales comunes en números de teléfono
     if (/^[0-9+\-\s]*$/.test(value)) {
-      setEditedUser({ ...editedUser, phone_number: value });
+      setEditedUser({ ...editedUser, phoneNumber: value });
       setPhoneError('');
     } else {
       setPhoneError('Solo se permiten números y los caracteres + - ');
@@ -315,23 +338,36 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handleSave = async () => {
-    const phoneValidationError = validatePhone(editedUser.phone_number || '');
+    const phoneValidationError = validatePhone(editedUser.phoneNumber || '');
     if (phoneValidationError) {
-      setPhoneError(phoneValidationError);
-      return;
+        setPhoneError(phoneValidationError);
+        return;
     }
 
     try {
-      await axios.put(`http://localhost:8070/users/${user.id}`, {
-        email: editedUser.email,
-        phone_number: editedUser.phone_number
-      });
+        const response = await axios.put(`http://localhost:8070/user/${user.id}`, {
+            email: editedUser.email,
+            phoneNumber: editedUser.phoneNumber
+        });
+        
+      setEditedUser(response.data.user);
+      setUser(response.data.user);
       setIsEditing(false);
       setPhoneError('');
+      showAlert({
+        title: 'Perfil actualizado',
+        message: 'Tu información fue guardada correctamente.',
+        showCancel: false,
+      });
     } catch (error) {
       console.error('Error updating user:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Error al actualizar los datos. Por favor, inténtalo de nuevo.',
+        showCancel: false,
+      });
     }
-  };
+};
 
   const handleCancel = () => {
     setEditedUser(user);
@@ -344,81 +380,83 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   };
 
   return (
-    <ProfileLayout>
-      <MainContent>
-        <ProfileCard>
-          <ProfileHeader>
-            <Avatar>{user.firstName[0]}</Avatar>
-            <UserInfo>
-              <UserName>{`${user.firstName} ${user.lastName}`}</UserName>
-              <UserRole>{user.role}</UserRole>
-            </UserInfo>
-          </ProfileHeader>
+    <Header>Perfil
+      <ProfileLayout>
+        <MainContent>
+          <ProfileCard>
+            <ProfileHeader>
+              <Avatar>{user.firstName[0]}</Avatar>
+              <UserInfo>
+                <UserName>{`${user.firstName} ${user.lastName}`}</UserName>
+                <UserRole>{user.role}</UserRole>
+              </UserInfo>
+            </ProfileHeader>
 
-          <SectionTitle>Información Personal</SectionTitle>
-          <InfoGrid>
-            <InfoItem>
-              <InfoLabel>Correo electrónico</InfoLabel>
-              {isEditing ? (
-                <InfoInput
-                  type="email"
-                  value={editedUser.email}
-                  onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
-                />
-              ) : (
-                <InfoValue>{user.email}</InfoValue>
-              )}
-            </InfoItem>
-            <InfoItem>
-              <InfoLabel>Teléfono</InfoLabel>
-              {isEditing ? (
-                <>
+            <SectionTitle>Información Personal</SectionTitle>
+            <InfoGrid>
+              <InfoItem>
+                <InfoLabel>Correo electrónico</InfoLabel>
+                {isEditing ? (
                   <InfoInput
-                    type="tel"
-                    value={editedUser.phone_number || ''}
-                    onChange={handlePhoneChange}
-                    placeholder="Ej: +57 300 1234567"
+                    type="email"
+                    value={editedUser.email}
+                    onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
                   />
-                  {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
-                </>
-              ) : (
-                <InfoValue>{user.phone_number || 'No especificado'}</InfoValue>
-              )}
-            </InfoItem>
-          </InfoGrid>
-          {isEditing ? (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <EditButton onClick={handleSave}>Guardar cambios</EditButton>
-              <EditButton 
-                onClick={handleCancel}
-                style={{ background: '#95a5a6' }}
-              >
-                Cancelar
+                ) : (
+                  <InfoValue>{user.email}</InfoValue>
+                )}
+              </InfoItem>
+              <InfoItem>
+                <InfoLabel>Teléfono</InfoLabel>
+                {isEditing ? (
+                  <>
+                    <InfoInput
+                      type="tel"
+                      value={editedUser.phoneNumber || ''}
+                      onChange={handlePhoneChange}
+                      placeholder="Ej: 300 1234567"
+                    />
+                    {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
+                  </>
+                ) : (
+                  <InfoValue>{user.phoneNumber || 'No especificado'}</InfoValue>
+                )}
+              </InfoItem>
+            </InfoGrid>
+            {isEditing ? (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <EditButton onClick={handleSave}>Guardar cambios</EditButton>
+                <EditButton 
+                  onClick={handleCancel}
+                  style={{ background: '#95a5a6' }}
+                >
+                  Cancelar
+                </EditButton>
+              </div>
+            ) : (
+              <EditButton onClick={handleEdit}>
+                Editar información
               </EditButton>
-            </div>
-          ) : (
-            <EditButton onClick={handleEdit}>
-              Editar información
-            </EditButton>
-          )}
-        </ProfileCard>
-      </MainContent>
+            )}
+          </ProfileCard>
+        </MainContent>
 
-      <FamilySection>
-        <SectionTitle>Miembros de la Familia</SectionTitle>
-        <FamilyMembersList>
-          {familyMembers.map((member) => (
-            <FamilyMemberCard key={member.id}>
-              <MemberAvatar>{member.firstName[0]}</MemberAvatar>
-              <MemberInfo>
-                <MemberName>{`${member.firstName} ${member.lastName}`}</MemberName>
-                <MemberRole>{member.role}</MemberRole>
-              </MemberInfo>
-            </FamilyMemberCard>
-          ))}
-        </FamilyMembersList>
-      </FamilySection>
-    </ProfileLayout>
+        <FamilySection>
+          <SectionTitle>Miembros de la Familia</SectionTitle>
+          <FamilyMembersList>
+            {familyMembers.map((member) => (
+              <FamilyMemberCard key={member.id}>
+                <MemberAvatar>{member.firstName[0]}</MemberAvatar>
+                <MemberInfo>
+                  <MemberName>{`${member.firstName} ${member.lastName}`}</MemberName>
+                  <MemberRole>{member.role}</MemberRole>
+                </MemberInfo>
+              </FamilyMemberCard>
+            ))}
+          </FamilyMembersList>
+        </FamilySection>
+      </ProfileLayout>
+    </Header>
   );
 };
 

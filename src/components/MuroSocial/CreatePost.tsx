@@ -220,7 +220,7 @@ interface CreatePostProps {
   onClose: () => void;
   onSubmit: (post: any) => void;
   userId: string;
-  familyId: string;
+  familyId: string | { id: string };
   familyMembers: FamilyMember[];
 }
 
