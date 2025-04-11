@@ -129,6 +129,11 @@ public class UserService {
         return userRepository.existsByDocumentTypeAndDocumentNumber(documentType, documentNumber);
     }
 
+    @Transactional
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
+
     public List<User> findByFamilyId(Family familyId) {
         return userRepository.findByFamilyId(familyId);
     }

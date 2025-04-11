@@ -243,6 +243,7 @@ public class UserController {
             userData.put("email", user.getEmail());
             userData.put("role", user.getRole());
             userData.put("gender", user.getGender());
+            userData.put("phoneNumber", user.getPhoneNumber());
             // Añadir familyId (puede ser null)
             if (user.getFamilyId() != null) {
                 if (user.getFamilyId() instanceof Family) {
@@ -322,6 +323,46 @@ public class UserController {
         }
     }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<Map<String, Object>> updateUser(
+            @PathVariable UUID userId,
+            @RequestBody UpdateUserRequest request) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Optional<User> userOptional = userService.findById(userId);
+            if (userOptional.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Usuario no encontrado");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            User user = userOptional.get();
+
+            // Actualizar solo los campos permitidos
+            if (request.getEmail() != null) {
+                user.setEmail(request.getEmail());
+            }
+            if (request.getPhoneNumber() != null) {
+                user.setPhoneNumber(request.getPhoneNumber());
+            }
+
+            User updatedUser = userService.updateUser(user);
+
+            response.put("success", true);
+            response.put("message", "Usuario actualizado exitosamente");
+            response.put("user", updatedUser);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al actualizar usuario: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     @GetMapping("/{userId}/family-members")
     public ResponseEntity<Map<String, Object>> getFamilyMembers(@PathVariable UUID userId) {
         Map<String, Object> response = new HashMap<>();
@@ -364,5 +405,11 @@ public class UserController {
     public static class LoginRequest {
         private String email;
         private String password;
+    }
+
+    @Data
+    public static class UpdateUserRequest {
+        private String email;
+        private String phoneNumber;
     }
 }

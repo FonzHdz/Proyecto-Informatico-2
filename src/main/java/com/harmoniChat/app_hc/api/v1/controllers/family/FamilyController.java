@@ -30,7 +30,8 @@ public class FamilyController {
                 .map(user -> new FamilyMemberResponse(
                         user.getId().toString(),
                         user.getFirstName(),
-                        user.getLastName()
+                        user.getLastName(),
+                        user.getRole()
                 ))
                 .collect(Collectors.toList());
 
@@ -40,6 +41,7 @@ public class FamilyController {
     public record FamilyMemberResponse(
             String id,
             String firstName,
-            String lastName
+            String lastName,
+            String role
     ) {}
 }
