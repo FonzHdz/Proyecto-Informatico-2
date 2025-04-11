@@ -31,7 +31,7 @@ const MessageContainer = styled.div<{ $isCurrentUser: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: ${props => props.$isCurrentUser ? 'flex-end' : 'flex-start'};
-  margin-bottom: 10px;
+  margin-bottom: -0px;
   width: 100%;
 `;
 
@@ -69,15 +69,21 @@ const TimeSeparator = styled.div`
   font-weight: 500;
 `;
 
-const MediaContainer = styled.div`
+const MediaContainer = styled.div<{ $isCurrentUser: boolean }>`
   width: 100%;
   max-width: 400px;
+  border-width: 10px;
 
   img, video {
     width: 100%;
     max-height: 300px;
     object-fit: contain;
     display: block;
+    border-color: ${props =>
+    props.$isCurrentUser ? '#905BBC' : '#3498DB'};
+    border-width: 10px;
+    border-style: solid;
+    border-radius: 18px;
   }
 `;
 
@@ -123,6 +129,7 @@ const FilePreviewContainer = styled.div`
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
+  padding-bottom: 12px;
 `;
 
 const FileHeader = styled.div`
@@ -176,7 +183,8 @@ const DownloadButton = styled.a`
   font-size: 13px;
   border-radius: 6px;
   transition: all 0.2s;
-  margin-left: 8px;
+  margin: 8px 12px 0; // Cambiado el margen para centrar y dar espacio arriba
+  width: calc(100% - 24px); // Ajuste para el ancho considerando los márgenes
 
   &:hover {
     background: rgba(255, 255, 255, 0.3);
@@ -240,16 +248,16 @@ const FilePreview = ({ fileUrl, fileName, fileSize }: { fileUrl?: string, fileNa
           {fileSize && <FileSize>{fileSize}</FileSize>}
           <FileTypeBadge>{fileType}</FileTypeBadge>
         </FileMeta>
-        <DownloadButton 
-          href={fileUrl} 
-          onClick={handleDownload}
-          rel="noopener noreferrer"
-          title="Descargar archivo"
-        >
-          <i className="fi fi-rr-download" />
-          Descargar
-        </DownloadButton>
       </FileHeader>
+      <DownloadButton 
+        href={fileUrl} 
+        onClick={handleDownload}
+        rel="noopener noreferrer"
+        title="Descargar archivo"
+      >
+        <i className="fi fi-rr-download" />
+        Descargar
+      </DownloadButton>
     </FilePreviewContainer>
   );
 };
@@ -294,13 +302,13 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser, previousMessa
           {!hasMedia && message.content}
           
           {message.fileURL && message.type === 'IMAGE' && (
-            <MediaContainer>
+            <MediaContainer $isCurrentUser={isCurrentUser}>
               <img src={message.fileURL} alt="Imagen enviada" />
             </MediaContainer>
           )}
 
           {message.fileURL && message.type === 'VIDEO' && (
-            <MediaContainer>
+            <MediaContainer $isCurrentUser={isCurrentUser}>
               <video controls>
                 <source src={message.fileURL} type="video/mp4" />
                 Tu navegador no soporta videos HTML5.
