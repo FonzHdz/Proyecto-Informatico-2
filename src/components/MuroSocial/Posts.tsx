@@ -37,12 +37,15 @@ const ActionButton = styled.button`
   }
 `;
 
-const LikeButton = styled(ActionButton)<{ liked?: boolean }>`
-  color: ${props => props.liked ? '#ff4757' : '#666'};
+const LikeButton = styled(ActionButton)`
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
   &:hover {
     color: #ff4757;
-    
+
     .fi {
       transform: scale(1.1);
     }
@@ -257,6 +260,74 @@ const Posts: React.FC<PostsProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const { showAlert } = useAlert();
+  const [likesMap, setLikesMap] = useState<Record<string, number>>({});
+  const [userLikeMap, setUserLikeMap] = useState<Record<string, string | null>>({});
+  
+
+  useEffect(() => {
+    const fetchLikesData = async () => {
+      const updatedLikes: Record<string, number> = {};
+      const updatedUserLikes: Record<string, string | null> = {};
+  
+      for (const post of posts) {
+        try {
+          const countRes = await fetch(`http://localhost:8070/likes/post/${post.id}/count`);
+          const count = await countRes.json();
+          updatedLikes[post.id] = count;
+  
+          const likeRes = await fetch(`http://localhost:8070/likes/by-user?userId=${userId}&postId=${post.id}`);
+          const likeData = await likeRes.json();
+          updatedUserLikes[post.id] = likeData?.id || null;
+        } catch (err) {
+          console.error("Error fetching like data", err);
+        }
+      }
+  
+      setLikesMap(updatedLikes);
+      setUserLikeMap(updatedUserLikes);
+      setIsLoading(false);
+    };
+  
+    if (posts.length > 0) fetchLikesData();
+  }, [posts, userId]);
+  
+  const handleLike = async (postId: string) => {
+    try {
+      const res = await fetch("http://localhost:8070/likes/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, postId }),
+      });
+  
+      const data = await res.json();
+      setUserLikeMap(prev => ({ ...prev, [postId]: data.id }));
+      setLikesMap(prev => ({ ...prev, [postId]: prev[postId] + 1 }));
+    } catch (err) {
+      showAlert({
+        title: 'Error',
+        message: 'Error al darle like a la publicación',
+        showCancel: false
+      });
+    }
+  };
+  
+  const handleUnlike = async (postId: string) => {
+    const likeId = userLikeMap[postId];
+    if (!likeId) return;
+  
+    try {
+      await fetch(`http://localhost:8070/likes/unlike/${likeId}`, { method: "DELETE" });
+      setUserLikeMap(prev => ({ ...prev, [postId]: null }));
+      setLikesMap(prev => ({ ...prev, [postId]: prev[postId] - 1 }));
+    } catch (err) {
+      showAlert({
+        title: 'Error',
+        message: 'Error al quitarle el like a la publicación',
+        showCancel: false
+      });
+    }
+  };
+  
 
   const fetchCommentsCount = async (postId: string) => {
     try {
@@ -457,13 +528,14 @@ const Posts: React.FC<PostsProps> = ({
     setSelectedPostId(postId);
     setShowComments(true);
   };
-
+  
   return (
     <>
       <Header>Publicaciones</Header>
       <PostsContainer>
         {posts.length > 0 ? (
           posts.map(post => (
+            
             <PostCard key={post.id}>
               <PostHeader>
                 <Avatar>
@@ -528,10 +600,12 @@ const Posts: React.FC<PostsProps> = ({
               })()}
 
               <PostActions>
-                <LikeButton>
-                  <i className="fi fi-rr-heart"></i>
-                  <span>{post.likes || 0}</span>
-                </LikeButton>
+              <LikeButton onClick={() =>
+                userLikeMap[post.id] ? handleUnlike(post.id) : handleLike(post.id)
+                }>
+                <i className="fi fi-rr-heart"></i>
+                <span>{likesMap[post.id] ?? post.likes ?? 0}</span>
+              </LikeButton>
 
                 <CommentButton onClick={() => handleCommentClick(post.id)}>
                   <i className="fi fi-rr-comment"></i>
