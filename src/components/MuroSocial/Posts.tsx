@@ -37,21 +37,6 @@ const ActionButton = styled.button`
   }
 `;
 
-const LikeButton = styled(ActionButton)`
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  &:hover {
-    color: #ff4757;
-
-    .fi {
-      transform: scale(1.1);
-    }
-  }
-`;
-
 const CommentButton = styled(ActionButton)`
   &:hover {
     color: #4a90e2;
@@ -246,6 +231,25 @@ interface PostsProps {
   currentUserRole: string;
 }
 
+interface LikeButtonProps {
+  liked?: boolean;
+}
+
+const LikeButton = styled(ActionButton)<LikeButtonProps>`
+  color: ${props => props.liked ? '#ff4757' : '#666'};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    color: #ff4757;
+    
+    .fi {
+      transform: scale(1.1);
+    }
+  }
+`;
+
 
 const Posts: React.FC<PostsProps> = ({ 
   userId, 
@@ -264,26 +268,61 @@ const Posts: React.FC<PostsProps> = ({
   const [likesMap, setLikesMap] = useState<Record<string, number>>({});
   const [userLikeMap, setUserLikeMap] = useState<Record<string, string | null>>({});
   
+  const createStompClient = () => {
+    const socket = new SockJS('http://localhost:8070/ws');
+    const stompClient = Stomp.over(() => new WebSocket(socket.url));
+    
+    // Configure reconnect settings
+    stompClient.reconnectDelay = 5000; // 5 seconds
+    stompClient.heartbeatIncoming = 4000;
+    stompClient.heartbeatOutgoing = 4000;
+    
+    return stompClient;
+  };
 
   useEffect(() => {
     const fetchLikesData = async () => {
       const updatedLikes: Record<string, number> = {};
       const updatedUserLikes: Record<string, string | null> = {};
-  
+    
+      // Inicializa todos los posts con 0 likes y sin like del usuario
+      posts.forEach(post => {
+        updatedLikes[post.id] = post.likes || 0;
+        updatedUserLikes[post.id] = null;
+      });
+    
+      // Luego actualiza con los datos reales del servidor
       for (const post of posts) {
         try {
-          const countRes = await fetch(`http://localhost:8070/likes/post/${post.id}/count`);
-          const count = await countRes.json();
-          updatedLikes[post.id] = count;
-  
-          const likeRes = await fetch(`http://localhost:8070/likes/by-user?userId=${userId}&postId=${post.id}`);
-          const likeData = await likeRes.json();
-          updatedUserLikes[post.id] = likeData?.id || null;
+          // Obtener conteo de likes
+          const countRes = await axios.get(`http://localhost:8070/likes/post/${post.id}/count`);
+          updatedLikes[post.id] = countRes.data;
+    
+          // Obtener like del usuario actual
+          try {
+            const likeRes = await axios.get(`http://localhost:8070/likes/by-user`, {
+              params: {
+                userId: userId,
+                postId: post.id
+              }
+            });
+            
+            // Si hay respuesta pero no datos (200 OK sin body)
+            if (!likeRes.data) {
+              updatedUserLikes[post.id] = null;
+            } else {
+              updatedUserLikes[post.id] = likeRes.data.id || null;
+            }
+          } catch (err) {
+            // Si hay error (ahora debería ser raro porque devolvemos 200 OK siempre)
+            updatedUserLikes[post.id] = null;
+          }
         } catch (err) {
           console.error("Error fetching like data", err);
+          // Mantener los valores por defecto si hay error
         }
       }
-  
+    
       setLikesMap(updatedLikes);
       setUserLikeMap(updatedUserLikes);
       setIsLoading(false);
@@ -291,44 +330,111 @@ const Posts: React.FC<PostsProps> = ({
   
     if (posts.length > 0) fetchLikesData();
   }, [posts, userId]);
+
+  useEffect(() => {
+    const stompClient = createStompClient();
+    
+    stompClient.connect({}, () => {
+      console.log('Connected to WebSocket');
+      
+      stompClient.subscribe('/topic/likes.global', (message) => {
+        const update = JSON.parse(message.body);
+        setLikesMap(prev => ({ ...prev, [update.postId]: update.count }));
+        
+        if (update.likeId) {
+          setUserLikeMap(prev => ({ ...prev, [update.postId]: update.likeId }));
+        } else {
+          setUserLikeMap(prev => ({ ...prev, [update.postId]: null }));
+        }
+      });
+  
+      posts.forEach(post => {
+        stompClient.subscribe(`/topic/likes.${post.id}`, (message) => {
+          const response = JSON.parse(message.body);
+          setLikesMap(prev => ({ ...prev, [post.id]: response.count }));
+          setUserLikeMap(prev => ({ 
+            ...prev, 
+            [post.id]: response.liked ? response.likeId : null 
+          }));
+        });
+      });
+    });
+  
+    return () => {
+      if (stompClient.connected) {
+        stompClient.disconnect();
+      }
+    };
+  }, [posts]);
   
   const handleLike = async (postId: string) => {
     try {
-      const res = await fetch("http://localhost:8070/likes/like", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, postId }),
-      });
+      // Optimistic update
+      setUserLikeMap(prev => ({ ...prev, [postId]: 'temp-like-id' }));
+      setLikesMap(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
   
-      const data = await res.json();
-      setUserLikeMap(prev => ({ ...prev, [postId]: data.id }));
-      setLikesMap(prev => ({ ...prev, [postId]: prev[postId] + 1 }));
-    } catch (err) {
+      const stompClient = createStompClient();
+      await new Promise<void>((resolve, reject) => {
+        stompClient.connect({}, () => {
+          stompClient.send("/app/likes.like", {}, JSON.stringify({
+            userId: userId,
+            postId: postId
+          }));
+          resolve();
+        });
+        
+        stompClient.onStompError = (error) => {
+          // Revertir cambios si falla
+          setUserLikeMap(prev => ({ ...prev, [postId]: null }));
+          setLikesMap(prev => ({ ...prev, [postId]: (prev[postId] || 1) - 1 }));
+          reject(error);
+        };
+      });
+    } catch (error) {
+      console.error("Error al dar like:", error);
       showAlert({
         title: 'Error',
-        message: 'Error al darle like a la publicación',
+        message: 'No se pudo registrar el like',
         showCancel: false
       });
     }
   };
   
   const handleUnlike = async (postId: string) => {
-    const likeId = userLikeMap[postId];
-    if (!likeId) return;
-  
     try {
-      await fetch(`http://localhost:8070/likes/unlike/${likeId}`, { method: "DELETE" });
+      if (!userLikeMap[postId]) return;
+      
+      // Optimistic update
       setUserLikeMap(prev => ({ ...prev, [postId]: null }));
-      setLikesMap(prev => ({ ...prev, [postId]: prev[postId] - 1 }));
-    } catch (err) {
+      setLikesMap(prev => ({ ...prev, [postId]: (prev[postId] || 1) - 1 }));
+  
+      const stompClient = createStompClient();
+      await new Promise<void>((resolve, reject) => {
+        stompClient.connect({}, () => {
+          stompClient.send("/app/likes.unlike", {}, JSON.stringify({
+            userId: userId,
+            postId: postId,
+            likeId: userLikeMap[postId]
+          }));
+          resolve();
+        });
+        
+        stompClient.onStompError = (error) => {
+          // Revertir cambios si falla
+          setUserLikeMap(prev => ({ ...prev, [postId]: userLikeMap[postId] }));
+          setLikesMap(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+          reject(error);
+        };
+      });
+    } catch (error) {
+      console.error("Error al quitar like:", error);
       showAlert({
         title: 'Error',
-        message: 'Error al quitarle el like a la publicación',
+        message: 'No se pudo quitar el like',
         showCancel: false
       });
     }
   };
-  
 
   const fetchCommentsCount = async (postId: string) => {
     try {
@@ -515,12 +621,10 @@ const Posts: React.FC<PostsProps> = ({
       await axios.delete(`http://localhost:8070/publications/delete/${postId}`);
       setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       
-      const socket = new SockJS('http://localhost:8070/ws');
-      const stompClient = Stomp.over(socket);
+      const stompClient = createStompClient();
       stompClient.connect({}, () => {
         stompClient.send("/app/deletePost", {}, JSON.stringify({ id: postId }));
       });
-      
     } catch (err) {
       console.error('Error deleting post:', err);
       showAlert({
@@ -618,12 +722,17 @@ const Posts: React.FC<PostsProps> = ({
               })()}
 
               <PostActions>
-              <LikeButton onClick={() =>
-                userLikeMap[post.id] ? handleUnlike(post.id) : handleLike(post.id)
-                }>
-                <i className="fi fi-rr-heart"></i>
-                <span>{likesMap[post.id] ?? post.likes ?? 0}</span>
-              </LikeButton>
+                <LikeButton 
+                  liked={!!userLikeMap[post.id]}
+                  onClick={() => userLikeMap[post.id] ? handleUnlike(post.id) : handleLike(post.id)}
+                >
+                  {userLikeMap[post.id] ? (
+                    <i className="fi fi-rr-heart" style={{ color: '#ff4757' }}></i>
+                  ) : (
+                    <i className="fi fi-rr-heart"></i>
+                  )}
+                  <span>{likesMap[post.id] ?? post.likes ?? 0}</span>
+                </LikeButton>
 
                 <CommentButton onClick={() => handleCommentClick(post.id)}>
                   <i className="fi fi-rr-comment"></i>

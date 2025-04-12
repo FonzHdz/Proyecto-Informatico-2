@@ -444,7 +444,9 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
         <FamilySection>
           <SectionTitle>Miembros de la Familia</SectionTitle>
           <FamilyMembersList>
-            {familyMembers.map((member) => (
+          {familyMembers
+            .filter(member => member.id !== user.id) // Filtra para excluir al usuario actual
+            .map((member) => (
               <FamilyMemberCard key={member.id}>
                 <MemberAvatar>{member.firstName[0]}</MemberAvatar>
                 <MemberInfo>
@@ -453,7 +455,7 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
                 </MemberInfo>
               </FamilyMemberCard>
             ))}
-          </FamilyMembersList>
+        </FamilyMembersList>
         </FamilySection>
       </ProfileLayout>
     </Header>
