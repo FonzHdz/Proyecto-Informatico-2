@@ -26,4 +26,8 @@ public class LikeService {
     public Optional<Like> getLikeByUserAndPost(UUID userId, UUID postId) {
         return likeRepository.findByUserIdAndPostId(userId, postId);
     }
+
+    public Optional<Like> getLikeById(UUID likeId) {
+        return likeRepository.findById(likeId);
+    }
 }
