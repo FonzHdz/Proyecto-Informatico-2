@@ -14,6 +14,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +32,7 @@ public class EmotionController {
     private final EmotionService emotionService;
     private final BlobStorageService blobStorageService;
     private final ObjectMapper objectMapper;
+    private static final Logger logger = LoggerFactory.getLogger(EmotionController.class);
 
     @Autowired
     public EmotionController(EmotionService emotionService, BlobStorageService blobStorageService, ObjectMapper objectMapper) {
@@ -169,36 +173,71 @@ public class EmotionController {
             @RequestParam(value = "removeImage", required = false) String removeImage) {
 
         try {
+            // Validar ID
+            if (id == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Optional<Emotion> existingEmotion = emotionService.findById(id);
             if (existingEmotion.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
-            EmotionRequest request = objectMapper.readValue(emotionJson, EmotionRequest.class);
+            // Parsear JSON
+            EmotionRequest request;
+            try {
+                request = objectMapper.readValue(emotionJson, EmotionRequest.class);
+            } catch (JsonProcessingException e) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Validar campos requeridos
+            if (request.name() == null || request.name().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Emotion emotionToUpdate = existingEmotion.get();
 
             // Actualizar campos básicos
             emotionToUpdate.setName(request.name());
             emotionToUpdate.setDescription(request.description());
 
+            logger.info("Iniciando actualización de emoción con ID: {}", id);
+            logger.debug("Datos recibidos - emotionJson: {}, file: {}, removeImage: {}",
+                    emotionJson, file != null ? file.getOriginalFilename() : "null", removeImage);
+
             // Manejar imagen
+            logger.debug("Estado actual de la imagen: {}", emotionToUpdate.getFilesURL());
             if ("true".equalsIgnoreCase(removeImage)) {
                 // Eliminar imagen existente si hay una
-                if (emotionToUpdate.getFilesURL() != null) {
-                    blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
-                    emotionToUpdate.setFilesURL(null);
+                if (emotionToUpdate.getFilesURL() != null &&
+                        !emotionToUpdate.getFilesURL().startsWith("/emotions/")) {
+                    try {
+                        blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
+                    } catch (Exception e) {
+                        // Log error pero continuar
+                        System.err.println("Error deleting old image: " + e.getMessage());
+                    }
                 }
+                emotionToUpdate.setFilesURL(null);
             } else if (file != null && !file.isEmpty()) {
-                // Subir nueva imagen y eliminar la anterior si existe
-                if (emotionToUpdate.getFilesURL() != null) {
-                    blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
+                // Subir nueva imagen
+                try {
+                    String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
+                    // Eliminar imagen anterior si existe
+                    if (emotionToUpdate.getFilesURL() != null &&
+                            !emotionToUpdate.getFilesURL().startsWith("/emotions/")) {
+                        blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
+                    }
+                    emotionToUpdate.setFilesURL(fileUrl);
+                } catch (IOException e) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
                 }
-                String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
-                emotionToUpdate.setFilesURL(fileUrl);
             }
 
             // Guardar cambios
             Emotion updatedEmotion = emotionService.save(emotionToUpdate);
+            logger.info("Emoción actualizada exitosamente: {}", updatedEmotion.getId());
 
             // Convertir a DTO de respuesta
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
@@ -212,6 +251,7 @@ public class EmotionController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
