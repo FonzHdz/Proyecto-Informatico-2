@@ -263,7 +263,7 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     const user = JSON.parse(localStorage.getItem('harmonichat_user') || '{}');
     if (!user?.id) {
       showAlert({
@@ -289,25 +289,24 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
     try {
       const emotionObj = emotions.find(e => e.id === selectedEmotion);
       const emotionLabel = emotionObj?.label || selectedEmotion;
-
+  
       const formData = new FormData();
       const emotionData = {
         name: emotionLabel,
         description: description,
         userId: user.id
       };
-
-      formData.append('emotion', new Blob([JSON.stringify(emotionData)], {
-        type: 'application/json'
-      }));
-
+  
+      // Convertir el objeto a JSON string
+      formData.append('emotion', JSON.stringify(emotionData));
+  
       if (image && !keepCurrentImage) {
         formData.append('file', image);
       } else if (!keepCurrentImage && !image) {
         formData.append('removeImage', 'true');
       }
       
-      await axios.patch(
+      const response = await axios.patch(
         `http://localhost:8070/emotion/update/${emotionId}`, 
         formData, 
         {
@@ -317,24 +316,29 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
         }
       );
       
-      setSelectedEmotion('');
-      setDescription('');
-      setImage(null);
-      setImagePreview('');
-      
-      if (onUpdate) {
-        onUpdate();
+      // Verificar respuesta exitosa
+      if (response.status === 200) {
+        setSelectedEmotion('');
+        setDescription('');
+        setImage(null);
+        setImagePreview('');
+        
+        if (onUpdate) {
+          onUpdate();
+        }
+  
+        onClose();
+      } else {
+        throw new Error('Error al actualizar la emoción');
       }
-
-      onClose();
   
     } catch (err) {
+      console.error('Error:', err);
       showAlert({
         title: 'Error',
-        message: 'Error al actualizar la emoción. Por favor intenta nuevamente.',
+        message: 'Error al actualizar la emoción. Por favor revisa los datos e intenta nuevamente.',
         showCancel: false
       });
-      console.error('Error:', err);
     } finally {
       setIsLoading(false);
     }

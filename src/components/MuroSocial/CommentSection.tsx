@@ -464,7 +464,10 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.id === postId ? { ...post, comments: post.comments - 1 } : post
+          post.id === postId ? { 
+            ...post, 
+            comments: Math.max(0, post.comments - 1)
+          } : post
         )
       );
     } catch (error) {
