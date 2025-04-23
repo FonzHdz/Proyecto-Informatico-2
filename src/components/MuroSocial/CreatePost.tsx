@@ -336,7 +336,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
         description,
         location,
         userId,
-        familyId
+        familyId: typeof familyId === 'string' ? familyId : familyId.id,
+        taggedUserIds: selectedMentions.map(member => member.id) 
       };
 
       formData.append('post', new Blob([JSON.stringify(postData)], {

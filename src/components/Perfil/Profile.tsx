@@ -37,6 +37,7 @@ const ProfileLayout = styled.div`
 const MainContent = styled.div`
   flex: 1;
   max-width: 800px;
+  width: 400px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -190,6 +191,7 @@ const EditButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
 
   &:hover {
     background: #357abd;
@@ -269,6 +271,29 @@ const ErrorMessage = styled.span`
   color: #e74c3c;
   font-size: 12px;
   margin-top: 4px;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  height: calc(100vh - 80px);
+  margin-top: -15px;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 interface User {
@@ -397,11 +422,13 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
               <InfoItem>
                 <InfoLabel>Correo electrónico</InfoLabel>
                 {isEditing ? (
+                  <div style={{ overflow: 'visible' }}>
                   <InfoInput
                     type="email"
                     value={editedUser.email}
                     onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
                   />
+                  </div>
                 ) : (
                   <InfoValue>{user.email}</InfoValue>
                 )}
@@ -424,7 +451,7 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
               </InfoItem>
             </InfoGrid>
             {isEditing ? (
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '20px' }}>
                 <EditButton onClick={handleSave}>Guardar cambios</EditButton>
                 <EditButton 
                   onClick={handleCancel}

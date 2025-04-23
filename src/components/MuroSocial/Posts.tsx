@@ -447,27 +447,55 @@ const Posts: React.FC<PostsProps> = ({
   };
 
   // Normalizar los posts para asegurarse de que todos los datos son consistentes
-  const normalizePost = (post: any): Post => ({
-    id: post.id,
-    authorName: post.authorName,
-    content: post.content,
-    filesURL: post.filesURL,
-    date: post.date,
-    rawDate: post.rawDate || post.creationDate || new Date().toISOString(),
-    likes: post.likes || 0,
-    comments: post.comments || 0,
-    location: post.location,
-    tags: post.tags || [],
-    userId: post.userId || post.user?.id || ''
-  });
+  const normalizePost = (post: any): Post => {
+    // Asegurar que siempre haya un autor
+    let authorName = 'Usuario desconocido';
+    if (post.authorName) {
+        authorName = post.authorName;
+    } else if (post.user) {
+        authorName = `${post.user.firstName || ''} ${post.user.lastName || ''}`.trim() || 'Usuario desconocido';
+    }
+
+    // Manejar tanto taggedUsers como tags para compatibilidad
+    let tags: TaggedUser[] = [];
+    if (post.taggedUsers) {
+        tags = post.taggedUsers.map((user: any) => ({
+            id: user.id,
+            name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()
+        }));
+    } else if (post.tags) {
+        tags = post.tags.map((tag: any) => ({
+            id: tag.id,
+            name: tag.name || 'Usuario desconocido'
+        }));
+    }
+
+    return {
+        id: post.id,
+        authorName,
+        content: post.content,
+        filesURL: post.filesURL,
+        date: post.date,
+        rawDate: post.rawDate || post.creationDate || new Date().toISOString(),
+        likes: post.likes || 0,
+        comments: post.comments || 0,
+        location: post.location,
+        tags: tags.filter(tag => tag.id), // Filtrar tags sin ID
+        userId: post.userId || post.user?.id || ''
+    };
+ };
 
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
       
       const [userPosts, familyPosts] = await Promise.all([
-        axios.get(`http://localhost:8070/publications/user/${userId}`),
-        axios.get(`http://localhost:8070/publications/family/${familyId}`)
+        axios.get(`http://localhost:8070/publications/user/${userId}`, {
+            params: { includeTaggedUsers: true } // Nuevo parámetro
+        }),
+        axios.get(`http://localhost:8070/publications/family/${familyId}`, {
+            params: { includeTaggedUsers: true } // Nuevo parámetro
+        })
       ]);
 
       // Combina los posts de ambas fuentes (usuario y familia)
@@ -665,34 +693,31 @@ const Posts: React.FC<PostsProps> = ({
                 </Avatar>
                 <PostInfo>
                   <h4>
-                    {post.authorName === currentUserName ? 'Yo' : post.authorName || 'Usuario desconocido'}
+                    {post.authorName === currentUserName ? 'Yo' : post.authorName || 'Usuario desconocido'} <small style={{fontWeight: '400'}}> • {post.date} </small>
                   </h4>
-                  <small>
-                    {post.date}
-                  </small>
+                  {post.tags && post.tags.length > 0 && (
+                    <TagsContainer>
+                        {post.tags.map(tag => {
+                            // Buscar el miembro de la familia para obtener los nombres actualizados
+                            const member = familyMembers.find(m => m.id === tag.id);
+                            const displayName = member 
+                                ? `${member.firstName} ${member.lastName}`
+                                : tag.name || 'Usuario desconocido';
+                            
+                            return (
+                                <UserTag key={tag.id}>
+                                    <i className="fi fi-rr-user"></i>
+                                    {displayName}
+                                </UserTag>
+                            );
+                        })}
+                    </TagsContainer>
+                  )}
                 </PostInfo>
               </PostHeader>
               
               {post.content && <PostContent>{post.content}</PostContent>}
-              
-              {post.tags && post.tags.length > 0 && (
-                <TagsContainer>
-                  {post.tags.map(tag => (
-                    <UserTag key={tag.id}>
-                      <i className="fi fi-rr-user"></i>
-                      {tag.name}
-                    </UserTag>
-                  ))}
-                </TagsContainer>
-              )}
-              
-              {post.location && (
-                <LocationTag>
-                  <i className="fi fi-rr-marker"></i>
-                  {post.location}
-                </LocationTag>
-              )}
-
+            
               {post.filesURL && !isEmptyFile(post.filesURL) && (() => {
                 const url = post.filesURL;
                 const extension = url.split('.').pop()?.toLowerCase().split('?')[0];
@@ -721,6 +746,13 @@ const Posts: React.FC<PostsProps> = ({
                 return null;
               })()}
 
+              {post.location && (
+                <LocationTag>
+                  <i className="fi fi-rr-marker"></i>
+                  {post.location}
+                </LocationTag>
+              )}
+              
               <PostActions>
                 <LikeButton 
                   liked={!!userLikeMap[post.id]}
