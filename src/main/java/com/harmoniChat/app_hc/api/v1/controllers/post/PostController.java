@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -49,11 +50,13 @@ public class PostController {
                 return ResponseEntity.badRequest().build();
             }
 
-            // Subir imagen si existe
-            String fileUrl = null;
-            if (file != null && !file.isEmpty()) {
-                fileUrl = blobStorageService.uploadFile(file, BlobContainerType.POSTS);
-            }
+            // Convertir IDs de usuarios etiquetados de String a UUID
+            List<UUID> taggedUserIds = request.taggedUserIds() != null
+                    ? request.taggedUserIds().stream()
+                    .filter(id -> id != null && !id.trim().isEmpty()) // Filtrar IDs vacíos
+                    .map(UUID::fromString)
+                    .collect(Collectors.toList())
+                    : Collections.emptyList();
 
             // Crear y guardar el post
             Post newPost = Post.builder()
@@ -61,29 +64,37 @@ public class PostController {
                     .location(request.location())
                     .userId(UUID.fromString(request.userId()))
                     .familyId(UUID.fromString(request.familyId()))
-                    .filesURL(fileUrl)
+                    .filesURL(null)
                     .build();
 
-            Post savedPost = postService.createNew(newPost, file);
+            Post savedPost = postService.createNew(newPost, file, taggedUserIds);
 
-            // Obtener información del usuario
+            // Obtener información del usuario autor
             User author = userService.findById(savedPost.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Convertir a DTO de respuesta completo
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
 
+            // Obtener información de usuarios etiquetados para la respuesta
+            List<TaggedUserResponse> taggedUsers = savedPost.getTaggedUsers() != null
+                    ? savedPost.getTaggedUsers().stream()
+                    .map(user -> new TaggedUserResponse(user.getId(), user.getFirstName() + " " + user.getLastName()))
+                    .collect(Collectors.toList())
+                    : Collections.emptyList();
+
             PostResponse fullResponse = PostResponse.builder()
                     .id(savedPost.getId())
-                    .authorName(author.getFirstName() + " " + author.getLastName())
+                    .authorName(author.getFirstName() + " " + author.getLastName()) // Usar el autor real
                     .content(savedPost.getDescription())
                     .filesURL(savedPost.getFilesURL())
-                    .date(savedPost.getCreationDate().format(formatter)) // Formato legible
-                    .rawDate(savedPost.getCreationDate().toString()) // Formato ISO para ordenamiento
+                    .date(savedPost.getCreationDate().format(formatter))
+                    .rawDate(savedPost.getCreationDate().toString())
                     .location(savedPost.getLocation())
                     .likes(0)
                     .comments(0)
                     .userId(savedPost.getUserId())
+                    .taggedUsers(taggedUsers)
                     .build();
 
             // Enviar la respuesta completa por WebSocket
@@ -117,9 +128,39 @@ public class PostController {
     public ResponseEntity<List<PostResponse>> getPostsByUser(@PathVariable UUID userId) {
         List<Post> posts = postService.findAllByUserId(userId);
         List<PostResponse> response = posts.stream()
-                .map(this::convertToPostResponse)
+                .map(post -> {
+                    User author = userService.findById(post.getUserId())
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+
+                    List<TaggedUserResponse> taggedUsers = post.getTaggedUsers() != null ?
+                            post.getTaggedUsers().stream()
+                                    .map(user -> new TaggedUserResponse(user.getId(),
+                                            user.getFirstName() + " " + user.getLastName()))
+                                    .collect(Collectors.toList()) :
+                            Collections.emptyList();
+
+                    return convertToPostResponse(post, author, taggedUsers);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
+    }
+
+    private PostResponse convertToPostResponse(Post post, User author, List<TaggedUserResponse> taggedUsers) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
+
+        return PostResponse.builder()
+                .id(post.getId())
+                .authorName(author.getFirstName() + " " + author.getLastName())
+                .content(post.getDescription())
+                .filesURL(post.getFilesURL())
+                .date(post.getCreationDate().format(formatter))
+                .rawDate(post.getCreationDate().toString())
+                .location(post.getLocation())
+                .likes(0)
+                .comments(0)
+                .userId(post.getUserId())
+                .taggedUsers(taggedUsers)
+                .build();
     }
 
     @GetMapping("/family/{familyId}")
@@ -178,6 +219,8 @@ public class PostController {
         }
     }
 
+    public record TaggedUserResponse(UUID id, String name) {}
+
     @Builder
     public record PostResponse(
             UUID id,
@@ -189,7 +232,8 @@ public class PostController {
             String location,
             Integer likes,
             Integer comments,
-            UUID userId
+            UUID userId,
+            List<TaggedUserResponse> taggedUsers  // Nuevo campo
     ) {}
 
     private PostResponse convertToResponse(Post post) {
@@ -211,12 +255,12 @@ public class PostController {
                 .build();
     }
 
-    // Registros (DTOs) para request/response
     public record PostRequest(
             String description,
             String location,
             String userId,
-            String familyId
+            String familyId,
+            List<String> taggedUserIds
     ) {}
 
     public record PostResponse2(

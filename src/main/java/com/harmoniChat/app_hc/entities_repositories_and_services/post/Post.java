@@ -1,11 +1,14 @@
 package com.harmoniChat.app_hc.entities_repositories_and_services.post;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -23,6 +26,16 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
     private UUID id;
+
+    @Getter
+    @Setter
+    @ManyToMany
+    @JoinTable(
+            name = "taggeds",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> taggedUsers = new HashSet<>();
 
     @Getter
     @Setter
