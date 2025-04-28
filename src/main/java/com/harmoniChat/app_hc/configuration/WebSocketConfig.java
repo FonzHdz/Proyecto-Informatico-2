@@ -13,7 +13,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
+        config.enableSimpleBroker("/topic", "/queue");
         config.setApplicationDestinationPrefixes("/app");
         config.setPreservePublishOrder(true); // Mantener orden de mensajes
     }
@@ -31,7 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
-        registration.setSendTimeLimit(15 * 1000)
+        registration.setSendTimeLimit(30 * 1000)
                 .setSendBufferSizeLimit(512 * 1024);
     }
 }

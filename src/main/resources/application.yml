@@ -67,3 +67,9 @@ spring:
   zerobouce:
     api:
       key: "af623b01e33243fd9469f07f8cc64bf0"
+  gemini:
+    api:
+      key: "AIzaSyBLV23iC90IJ46dXI70axOcnDQG_DUggsw"
+    location: "us-central1"
+    project:
+      id: "gen-lang-client-0542591181"
