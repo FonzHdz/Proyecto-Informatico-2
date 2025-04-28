@@ -37,7 +37,7 @@ const MessageContainer = styled.div<{ $isCurrentUser: boolean }>`
 
 const MessageBubble = styled.div<{ $isCurrentUser: boolean, $hasMedia: boolean }>`
   max-width: 40%;
-  padding: ${props => props.$hasMedia ? '0' : '12px 16px'};
+  padding: ${props => props.$hasMedia ? '0' : '10px 16px'};
   border-radius: ${props =>
     props.$isCurrentUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px'};
   background: ${props =>

@@ -39,6 +39,13 @@ const PopupMessage = styled.p`
   line-height: 1.5;
 `;
 
+const PopupSubtitle = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 25px;
+  line-height: 1.5;
+`;
+
 const PopupButtons = styled.div`
   display: flex;
   justify-content: center;
@@ -77,6 +84,7 @@ export interface PopupAlertProps {
   isOpen: boolean;
   title: string;
   message: string;
+  subtitle?: string;
   onConfirm?: () => void;
   onCancel?: () => void;
   confirmText?: string;
@@ -88,6 +96,7 @@ export const PopupAlert: React.FC<PopupAlertProps> = ({
   isOpen,
   title,
   message,
+  subtitle,
   onConfirm = () => {},
   onCancel = () => {},
   confirmText = 'Aceptar',
@@ -101,6 +110,7 @@ export const PopupAlert: React.FC<PopupAlertProps> = ({
       <PopupContent>
         <PopupTitle>{title}</PopupTitle>
         <PopupMessage>{message}</PopupMessage>
+        <PopupSubtitle>{subtitle}</PopupSubtitle>
         <PopupButtons>
           {showCancel && (
             <PopupButton onClick={onCancel}>

@@ -16,6 +16,7 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
     isOpen: false,
     title: '',
     message: '',
+    subtitle: '',
     onConfirm: () => {},
     onCancel: () => {}
   });

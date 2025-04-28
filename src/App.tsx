@@ -7,6 +7,7 @@ import Filters from './components/MuroSocial/Filters';
 import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
 import Profile from './components/Perfil/Profile';
 import Chat from './components/Chat/Chat';
+import ChatBot from './components/ChatBot/ChatBot';
 import axios from 'axios';
 
 const AppContainer = styled.div`
@@ -375,6 +376,9 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('harmonichat_user')
+    localStorage.removeItem('pendingChatBotMessages')
+    localStorage.removeItem('harmoniBotChatHistory')
+    
     setCurrentUser(null);
     window.location.href = 'http://localhost:3000';
   };
@@ -418,6 +422,8 @@ function App() {
         );
       case 'profile':
         return <Profile user={currentUser} setUser={setCurrentUser} />;
+      case 'chatbot':
+        return <ChatBot/>;
       default:
         return (
           <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
@@ -484,7 +490,9 @@ function App() {
         <Header>
           {currentUser ? (
             <>
-              {activeSection === 'diary' ? 'Diario de emociones' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+              {activeSection === 'diary' ? 'Diario de emociones' : 
+               activeSection === 'chatbot' ? 'HarmoniBot': 
+               activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
               <span style={{ float: 'right', fontSize: '16px' }}>
               </span>
             </>
