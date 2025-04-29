@@ -164,9 +164,8 @@ const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px;
-  height: calc(100vh - 80px); /* Resta la altura del header */
-  margin-top: -15px; /* Compensa el padding del header */
+  height: calc(100vh - 80px);
+  margin-top: -15px;
 `;
 
 const LoadingSpinner = styled.div`
@@ -375,9 +374,9 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('harmonichat_user')
-    localStorage.removeItem('pendingChatBotMessages')
-    localStorage.removeItem('harmoniBotChatHistory')
+    localStorage.removeItem('harmonichat_user');
+    localStorage.removeItem('harmoniBotChatHistory');
+    localStorage.removeItem('pendingChatBotMessages');
     
     setCurrentUser(null);
     window.location.href = 'http://localhost:3000';
