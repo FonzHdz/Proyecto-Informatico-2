@@ -63,7 +63,7 @@ const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 140px);
+  height: calc(50vh);
 `;
 
 const LoadingSpinner = styled.div`
@@ -142,33 +142,18 @@ const InputContainer = styled.div`
   z-index: 100;
 `;
 
-const InputField = styled.input`
+const InputField = styled.input<{ $hasNewChatButton?: boolean }>`
+
   flex: 1;
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 20px;
   outline: none;
   font-size: 14px;
-  transition: border 0.2s;
+  transition: all 0.3s ease;
 
   &:focus {
     border-color: #4a90e2;
-  }
-`;
-
-const NewChatButton = styled.button`
-  background: transparent;
-  color:rgb(255, 255, 255);
-  border: none;
-  font-size: 30px;
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-  margin-left: 10px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    color: #4a90e2;
   }
 `;
 
@@ -192,6 +177,52 @@ const SendButton = styled.button<{ $disabled: boolean }>`
   &:hover:not(:disabled) {
     opacity: 0.9;
     transform: scale(1.05);
+  }
+`;
+
+const NewChatButton = styled.button`
+  position: relative;
+  background: linear-gradient(90deg, #4a90e2 0%, #7b1fa2 100%);
+  color: white;
+  border: none;
+  padding: 12px 15px;
+  border-radius: 50px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 18px;
+  cursor: pointer;
+  overflow: hidden;
+  width: 40px; /* <-- tamaño base reducido */
+  height: 40px;
+  
+  .icon {
+    font-size: 20px;
+    transition: opacity 0.3s;
+  }
+
+  .text {
+    position: absolute;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+    transform: scale(0.8); /* opcional: animación más suave */
+  }
+
+  &:hover {
+    width: 100px; /* <-- en hover, el botón se expande */
+    font-size: 14px; /* <-- tamaño de fuente ajustado */
+  }
+
+  &:hover .icon {
+    opacity: 0;
+  }
+
+  &:hover .text {
+    opacity: 1;
+    transform: scale(1);
   }
 `;
 
@@ -395,9 +426,6 @@ const ChatBot: React.FC = () => {
     <>
       <Header>
         <span>HarmoniBot</span>
-        <NewChatButton onClick={handleNewChat}>
-            <i className="fi fi-rr-comment-alt-medical"> </i>
-        </NewChatButton>
       </Header>
 
       <ChatContainer>
@@ -424,11 +452,18 @@ const ChatBot: React.FC = () => {
         </MessagesContainer>
 
         <InputContainer>
+            {messages.length > 0 && (
+            <NewChatButton onClick={handleNewChat}>
+                <SendIcon className="fi fi-rr-comment-medical icon"/>
+                <span className="text">Nuevo chat</span>
+            </NewChatButton>
+            )}
           <InputField
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Escribe un mensaje..."
+            $hasNewChatButton={messages.length > 0}
           />
           <SendButton
             onClick={handleSendMessage}
