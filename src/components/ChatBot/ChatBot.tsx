@@ -271,8 +271,8 @@ const SuggestedQuestions: React.FC<{ onSelect: (q: string) => void }> = ({ onSel
     "¿Qué actividades familiares podemos hacer?",
     "¿Cómo mejorar la comunicación en casa?",
     "¿Cómo resolver peleas entre hermanos?",
-    "Ideas para un fin de semana divertido",
     "¿Qué hacer cuando los niños no obedecen?",
+    "Dame sugerencias según mi diario de emociones",
   ];
 
   return (
@@ -294,7 +294,17 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const ChatBot: React.FC = () => {
+interface ChatRequest {
+  message: string;
+  history: ChatMessage[];
+  userId: string;
+}
+
+interface ChatBotProps {
+  userId: string;
+}
+
+const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const savedChat = localStorage.getItem('harmoniBotChatHistory');
     if (savedChat) {
@@ -363,6 +373,7 @@ const ChatBot: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+    
     const userMessage: ChatMessage = {
       role: 'user',
       content: inputMessage,
@@ -370,34 +381,49 @@ const ChatBot: React.FC = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const text = inputMessage;
     setInputMessage('');
     setIsLoading(true);
 
-    if (stompClient.current?.connected) {
-      stompClient.current.publish({
-        destination: '/app/chatbot.send',
-        body: JSON.stringify({ content: text, familyId: user.current?.familyId }),
-        headers: { 'content-type': 'application/json' },
+    try {
+      const response = await fetch('http://localhost:8070/api/v1/chatbot/chat', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('token') && { 
+            'Authorization': `Bearer ${localStorage.getItem('token')}` 
+          })
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          userId: userId, // Usamos la prop directamente
+          history: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        } as ChatRequest),
       });
-    } else {
-      try {
-        const response = await fetch('http://localhost:8070/chatbot/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: text }),
-        });
-        const data = await response.json();
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: data.content, timestamp: new Date() },
-        ]);
-      } catch (error) {
-        console.error('HTTP error:', error);
-        showAlert({ title: 'Error', message: 'No se pudo enviar el mensaje.' });
-      } finally {
-        setIsLoading(false);
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
+
+      const data = await response.json();
+      setMessages((prev) => [
+        ...prev,
+        { 
+          role: 'assistant', 
+          content: data.content, 
+          timestamp: new Date() 
+        },
+      ]);
+    } catch (error) {
+      console.error('Error:', error);
+      showAlert({ 
+        title: 'Error', 
+        message: 'No se pudo obtener respuesta del chatbot' 
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

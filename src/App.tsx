@@ -8,6 +8,8 @@ import EmotionDiary from './components/DiarioEmociones/EmotionDiary';
 import Profile from './components/Perfil/Profile';
 import Chat from './components/Chat/Chat';
 import ChatBot from './components/ChatBot/ChatBot';
+import AlbumGallery from './components/Album/AlbumGallery';
+import AlbumDetail from './components/Album/AlbumDetail';
 import axios from 'axios';
 
 const AppContainer = styled.div`
@@ -226,6 +228,7 @@ function App() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
+  const [selectedAlbum, setSelectedAlbum] = useState<any | null>(null);
   const [filters, setFilters] = useState({
     author: '',
     dateFrom: '',
@@ -422,7 +425,25 @@ function App() {
       case 'profile':
         return <Profile user={currentUser} setUser={setCurrentUser} />;
       case 'chatbot':
-        return <ChatBot/>;
+        return <ChatBot userId={currentUser.id} />;
+      case 'album':
+        return (
+          <AlbumGallery
+            user={currentUser}
+            setActiveSection={setActiveSection}
+            setSelectedAlbum={setSelectedAlbum}
+          />
+        );
+      case 'albumDetail':
+      return selectedAlbum ? (
+        <AlbumDetail
+          album={selectedAlbum}
+          onBack={() => setActiveSection('album')}
+          userId={currentUser.id} userRole={currentUser.role} 
+          familyId={typeof currentUser.familyId === 'string' ? currentUser.familyId : currentUser.familyId.id}       />
+      ) : (
+        <div style={{ padding: '20px' }}>No se ha seleccionado ningún álbum.</div>
+      );
       default:
         return (
           <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
@@ -430,7 +451,7 @@ function App() {
           </div>
         );
     }
-  };
+  };  
 
   return (
     <AlertProvider>

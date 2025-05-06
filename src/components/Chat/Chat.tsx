@@ -13,7 +13,7 @@ const ChatContainer = styled.div`
   width: calc(100% - 0px);
   margin-left: 50px;
   margin-right: -20px;
-  overflow: hidden;
+  overflow-y: auto;
 `;
 
 const MessagesContainer = styled.div`
@@ -23,7 +23,7 @@ const MessagesContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-top: -15px;
+  margin-top: -5px;
   margin-bottom: 35px;
 `;
 
