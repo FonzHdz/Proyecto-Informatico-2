@@ -2,6 +2,7 @@ package com.harmoniChat.app_hc.entities_repositories_and_services.emotion_diary;
 
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class EmotionService {
         return emotionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Emotion> findAllByUserId(UUID userId){
         return emotionRepository.findByUserIdOrderByCreationDateDesc(userId);
     }

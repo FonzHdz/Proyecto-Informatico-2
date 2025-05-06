@@ -32,6 +32,14 @@ spring:
     validate-on-migrate: false
     out-of-order: true
   azure:
+    vision:
+      connection-string: "https://harmonicv.cognitiveservices.azure.com/"
+      api:
+        key: "BgDMXE7pHlhZStlS94Df3ZgZDolslmCH8zKbM1vadh98818uXkIUJQQJ99BEACYeBjFXJ3w3AAAFACOGoOOa"
+    text:
+      connection-string: "https://harmonita.cognitiveservices.azure.com/"
+      api:
+        key: "1i3nJsfqKhvH4uaLjcVregdXGdu6qDiFk6nYF7MiqnwskDJ45GANJQQJ99BEACYeBjFXJ3w3AAAaACOGmL8p"
     storage:
       connection-string: "DefaultEndpointsProtocol=https;AccountName=harmonichat;AccountKey=EhRSPUxrdIol/BcdnkZifwDzTSb8JIwdSLpe7i04fh83qGRJnJ1oMWYsG+tWmPQgii1VVQ7qh+nn+AStWzLwYQ==;EndpointSuffix=core.windows.net"
       containers:
@@ -73,3 +81,25 @@ spring:
     location: "us-central1"
     project:
       id: "gen-lang-client-0542591181"
+  textrazor:
+    api:
+      key: 7636d5fe539f3f0f65c5c5cd1e0f062fe5ed02a1091ab862475be6c1
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=1h
+
+harmonichat:
+  album:
+    min-posts-per-album: 3
+    max-posts-to-analyze: 20
+    grouping:
+      priorities: event,location,person,theme
+    min-confidence: 0.7
+
+logging:
+  level:
+    org.springframework.web.client.RestTemplate: DEBUG
+    com.harmoniChat.app_hc.configuration.AlbumAnalysisConfig: DEBUG
+    org.apache.http.wire: DEBUG

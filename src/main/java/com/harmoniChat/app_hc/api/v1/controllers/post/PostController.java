@@ -1,5 +1,7 @@
 package com.harmoniChat.app_hc.api.v1.controllers.post;
 
+import com.harmoniChat.app_hc.entities_repositories_and_services.album.Album;
+import com.harmoniChat.app_hc.entities_repositories_and_services.album.AlbumRepository;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobContainerType;
 import com.harmoniChat.app_hc.entities_repositories_and_services.blob_storage.BlobStorageService;
 import com.harmoniChat.app_hc.entities_repositories_and_services.post.Post;
@@ -19,10 +21,7 @@ import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final AlbumRepository albumRepository;
     private final BlobStorageService blobStorageService;
     private final ObjectMapper objectMapper;
     private final UserService userService;
@@ -122,6 +122,35 @@ public class PostController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/family/{familyId}/available-photos")
+    public ResponseEntity<List<PostResponse>> getAvailablePhotosForAlbum(
+            @PathVariable UUID familyId,
+            @RequestParam(required = false) UUID albumId) {
+
+        List<Post> allFamilyPosts = postService.findAllByFamilyId(familyId);
+
+        // Si se proporciona un albumId, filtrar posts que no estén ya en el álbum
+        if (albumId != null) {
+            Album album = albumRepository.findById(albumId)
+                    .orElseThrow(() -> new RuntimeException("Álbum no encontrado"));
+            Set<Post> albumPosts = album.getPosts();
+            allFamilyPosts = allFamilyPosts.stream()
+                    .filter(post -> !albumPosts.contains(post))
+                    .collect(Collectors.toList());
+        }
+
+        // Filtrar solo posts con imágenes
+        List<Post> photoPosts = allFamilyPosts.stream()
+                .filter(post -> post.getFilesURL() != null && !post.getFilesURL().isEmpty())
+                .collect(Collectors.toList());
+
+        List<PostResponse> response = photoPosts.stream()
+                .map(this::convertToPostResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
