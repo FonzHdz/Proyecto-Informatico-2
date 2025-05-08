@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.List;
 @Service
 public class GeminiChatService {
 
-    private static final String GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=";
+    private static final String GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro-exp:generateContent?key=";
 
     private final String apiKey;
     private final RestTemplate restTemplate;
@@ -143,23 +144,46 @@ public class GeminiChatService {
         this.objectMapper = new ObjectMapper();
     }
 
+    private static final int MAX_RETRIES = 3;
+    private static final long INITIAL_BACKOFF_MS = 1000; // 1 second
+
     public String getChatResponse(String userMessage, List<ChatMessage> history) {
-        try {
-            GeminiRequest request = buildGeminiRequest(userMessage, history);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        int retryCount = 0;
+        long backoffTime = INITIAL_BACKOFF_MS;
 
-            ResponseEntity<GeminiResponse> response = restTemplate.exchange(
-                    GEMINI_ENDPOINT + apiKey,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    GeminiResponse.class
-            );
+        while (retryCount <= MAX_RETRIES) {
+            try {
+                GeminiRequest request = buildGeminiRequest(userMessage, history);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            return extractResponseText(response);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al comunicarse con Gemini API", e);
+                ResponseEntity<GeminiResponse> response = restTemplate.exchange(
+                        GEMINI_ENDPOINT + apiKey,
+                        HttpMethod.POST,
+                        new HttpEntity<>(request, headers),
+                        GeminiResponse.class
+                );
+
+                return extractResponseText(response);
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                retryCount++;
+                if (retryCount > MAX_RETRIES) {
+                    throw new RuntimeException("Demasiadas solicitudes. Por favor intente más tarde.", e);
+                }
+
+                // Parse retry-after header or use exponential backoff
+                try {
+                    Thread.sleep(backoffTime);
+                    backoffTime *= 2; // Exponential backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupción durante el reintento", ie);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error al comunicarse con Gemini API", e);
+            }
         }
+        return "Lo siento, estoy experimentando alta demanda. Por favor inténtalo de nuevo más tarde.";
     }
 
     private String extractResponseText(ResponseEntity<GeminiResponse> response) {

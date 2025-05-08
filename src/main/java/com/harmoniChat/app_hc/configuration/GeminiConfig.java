@@ -33,6 +33,6 @@ public class GeminiConfig {
 
     @Bean
     public GenerativeModel generativeModel(VertexAI vertexAI) {
-        return new GenerativeModel("gemini-1.5-pro", vertexAI);
+        return new GenerativeModel("gemini-2.0-pro-exp", vertexAI);
     }
 }
