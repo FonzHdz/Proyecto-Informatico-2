@@ -307,7 +307,7 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
       }
       
       const response = await axios.patch(
-        `http://localhost:8070/emotion/update/${emotionId}`, 
+        `https://backend-hc.up.railway.app/emotion/update/${emotionId}`, 
         formData, 
         {
           headers: {

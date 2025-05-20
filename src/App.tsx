@@ -269,7 +269,7 @@ function App() {
     try {
       setIsLoadingMembers(true);
       setMembersError(null);
-      const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
       setFamilyMembers(response.data);
     } catch (error) {
       console.error('Error fetching family members:', error);
@@ -382,7 +382,7 @@ function App() {
     localStorage.removeItem('pendingChatBotMessages');
     
     setCurrentUser(null);
-    window.location.href = 'http://localhost:3000';
+    window.location.href = 'http://https://auth-hc.up.railway.app/';
   };
 
   const renderContent = () => {

@@ -225,7 +225,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
         formData.append('defaultImagePath', defaultImagePath);
       }
       
-      await axios.post('http://localhost:8070/emotion/new', formData, {
+      await axios.post('https://backend-hc.up.railway.app/emotion/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

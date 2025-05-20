@@ -324,7 +324,7 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
     const fetchFamilyMembers = async () => {
       try {
         const familyId = typeof user.familyId === 'string' ? user.familyId : user.familyId.id;
-        const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+        const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
         setFamilyMembers(response.data);
       } catch (error) {
         console.error('Error fetching family members:', error);
@@ -370,7 +370,7 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
     }
 
     try {
-        const response = await axios.put(`http://localhost:8070/user/${user.id}`, {
+        const response = await axios.put(`https://backend-hc.up.railway.app/user/${user.id}`, {
             email: editedUser.email,
             phoneNumber: editedUser.phoneNumber
         });

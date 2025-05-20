@@ -315,7 +315,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
   const fetchAlbums = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8070/albums/family/${familyId}`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/albums/family/${familyId}`);
       setAlbums(response.data); // Los álbumes ya incluirán postCount
     } catch (error) {
       // manejo de errores
@@ -326,7 +326,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
 
   const fetchAvailablePosts = async () => {
     try {
-      const response = await axios.get(`http://localhost:8070/publications/family/${familyId}/available-photos`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/publications/family/${familyId}/available-photos`);
       if (response.data && response.data.length > 0) {
         setAvailablePosts(response.data);
       } else {
@@ -340,7 +340,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
   const handleGenerateAlbums = async () => {
     setLoading(true);
     try {
-      await axios.post(`http://localhost:8070/albums/generate/${familyId}`);
+      await axios.post(`https://backend-hc.up.railway.app/albums/generate/${familyId}`);
       showAlert({ title: 'Éxito', message: 'Álbumes generados automáticamente' });
       await fetchAlbums();
     } catch (error) {
@@ -360,7 +360,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
     if (!confirmed) return;
     
     try {
-      await axios.delete(`http://localhost:8070/albums/delete/${albumId}`);
+      await axios.delete(`https://backend-hc.up.railway.app/albums/delete/${albumId}`);
       setAlbums(prev => prev.filter(album => album.id !== albumId));
       showAlert({ title: 'Éxito', message: 'Álbum eliminado correctamente' });
     } catch (error) {
@@ -381,7 +381,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
 
     try {
         setLoading(true);
-        const response = await axios.post(`http://localhost:8070/albums/create`, selectedPosts, {
+        const response = await axios.post(`https://backend-hc.up.railway.app/albums/create`, selectedPosts, {
           params: {
             title: newAlbumData.title,
             description: newAlbumData.description,

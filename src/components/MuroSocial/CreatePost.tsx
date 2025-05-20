@@ -263,7 +263,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         try {
           setIsLoadingMembers(true);
           setMembersError(null);
-          const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+          const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
           setFamilyMembers(response.data);
         } catch (err) {
           console.error('Error al obtener miembros de la familia:', err);
@@ -348,7 +348,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         formData.append('file', image);
       }
 
-      const response = await axios.post('http://localhost:8070/publications/new', formData, {
+      const response = await axios.post('https://backend-hc.up.railway.app/publications/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

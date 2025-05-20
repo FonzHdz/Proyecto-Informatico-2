@@ -30,7 +30,7 @@ const useChat = (user: User) => {
     if (user.familyId) {
       const fetchMessages = async () => {
         try {
-          const response = await fetch(`http://localhost:8070/chat/messages?familyId=${user.familyId}`);
+          const response = await fetch(`https://backend-hc.up.railway.app/chat/messages?familyId=${user.familyId}`);
           const data = await response.json();
           setMessages(data);
         } catch (error) {
@@ -103,7 +103,7 @@ const useChat = (user: User) => {
   const markMessagesAsRead = useCallback(async () => {
     if (user.familyId) {
       try {
-        await fetch('http://localhost:8070/chat/mark-as-read', {
+        await fetch('https://backend-hc.up.railway.app/chat/mark-as-read', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

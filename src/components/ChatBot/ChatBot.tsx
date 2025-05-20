@@ -329,7 +329,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
 
   useEffect(() => {
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8070/ws'),
+      webSocketFactory: () => new SockJS('https://backend-hc.up.railway.app/ws'),
       connectHeaders: { 'user-id': user.current?.id || 'anonymous' },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
@@ -385,7 +385,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8070/api/v1/chatbot/chat', {
+      const response = await fetch('https://backend-hc.up.railway.app/api/v1/chatbot/chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

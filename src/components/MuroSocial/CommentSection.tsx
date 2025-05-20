@@ -320,7 +320,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   useEffect(() => {
     if (!isOpen || !postId) return;
   
-    const socket = new SockJS('http://localhost:8070/ws');
+    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
     const stompClient = Stomp.over(socket);
   
     stompClient.connect({}, () => {
@@ -351,7 +351,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:8070/comments/post/${postId}`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/comments/post/${postId}`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -371,7 +371,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   }, [isOpen, postId]);
   
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8070/ws');
+    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, () => {
@@ -395,7 +395,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   useEffect(() => {
     if (!isOpen || !postId) return;
   
-    const socket = new SockJS('http://localhost:8070/ws');
+    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
     const stompClient = Stomp.over(socket);
   
     stompClient.connect({}, () => {
@@ -427,7 +427,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   
     try {
       setIsSubmitting(true);
-      await axios.post('http://localhost:8070/comments/send', {
+      await axios.post('https://backend-hc.up.railway.app/comments/send', {
         content: newComment,
         postId,
         userId: currentUser.id
@@ -458,7 +458,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     if (!confirmed) return;
     
     try {
-      await axios.delete(`http://localhost:8070/comments/delete/${commentId}`);
+      await axios.delete(`https://backend-hc.up.railway.app/comments/delete/${commentId}`);
       
       setComments(prev => prev.filter(comment => comment.id !== commentId));
       

@@ -210,7 +210,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
     const fetchEmotions = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`http://localhost:8070/emotion/user/${userId}`);
+        const response = await axios.get(`https://backend-hc.up.railway.app/emotion/user/${userId}`);
         
         const formattedEmotions = response.data
         .map((item: any) => ({
@@ -240,7 +240,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
 
   const handleCreateEmotion = async () => {
     try {
-      const response = await axios.get(`http://localhost:8070/emotion/user/${userId}`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/emotion/user/${userId}`);
       const formattedEmotions = response.data
         .map((item: any) => ({
           id: item.id,
@@ -272,7 +272,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
     if (!confirmed) return;
     
     try {
-      await axios.delete(`http://localhost:8070/emotion/delete/${id}`);
+      await axios.delete(`https://backend-hc.up.railway.app/emotion/delete/${id}`);
       setEmotions(prev => prev.filter(emotion => emotion.id !== id));
     } catch (err) {
       console.error('Error al eliminar la emoción:', err);

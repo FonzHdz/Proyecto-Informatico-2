@@ -486,7 +486,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
     const fetchAlbumPhotos = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8070/albums/${album.id}/photos`);
+        const response = await axios.get(`https://backend-hc.up.railway.app/albums/${album.id}/photos`);
         setPhotos(response.data);
       } catch (error) {
         showAlert({ title: 'Error', message: 'No se pudieron cargar las fotos del álbum' });
@@ -519,7 +519,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
     const fetchAvailablePosts = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8070/publications/family/${familyId}/available-photos`,
+          `https://backend-hc.up.railway.app/publications/family/${familyId}/available-photos`,
           { params: { albumId: album.id } }
         );
         setAvailablePosts(response.data);
@@ -530,7 +530,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
 
     const handleAddPhotos = async () => {
       try {
-        await axios.post(`http://localhost:8070/albums/${album.id}/add-posts`, {
+        await axios.post(`https://backend-hc.up.railway.app/albums/${album.id}/add-posts`, {
           postIds: selectedPosts
         });
         showAlert({ 
@@ -552,7 +552,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
       }
 
       try {
-        const response = await axios.put(`http://localhost:8070/albums/${album.id}`, {
+        const response = await axios.put(`https://backend-hc.up.railway.app/albums/${album.id}`, {
           title: albumTitle
         });
         
@@ -571,7 +571,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
 
     const handleSetCover = async (photoUrl: string) => {
       try {
-        await axios.put(`http://localhost:8070/albums/${album.id}/cover`, {
+        await axios.put(`https://backend-hc.up.railway.app/albums/${album.id}/cover`, {
           coverImageUrl: photoUrl
         });
         showAlert({ 
@@ -585,7 +585,7 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
 
     const handleDeletePhoto = async (photoId: string) => {
       try {
-        await axios.delete(`http://localhost:8070/albums/${album.id}/photos/${photoId}`);
+        await axios.delete(`https://backend-hc.up.railway.app/albums/${album.id}/photos/${photoId}`);
         
         const updatedPhotos = photos.filter(photo => photo.id !== photoId);
         setPhotos(updatedPhotos);

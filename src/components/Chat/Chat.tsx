@@ -128,7 +128,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8070/ws'),
+      webSocketFactory: () => new SockJS('https://backend-hc.up.railway.app/ws'),
       connectHeaders: {
         'user-id': user.id,
         'family-id': typeof user.familyId === 'string' ? user.familyId : user.familyId.id
@@ -186,7 +186,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8070/chat/messages?familyId=${user.familyId}`);
+      const response = await fetch(`https://backend-hc.up.railway.app/chat/messages?familyId=${user.familyId}`);
       if (!response.ok) throw new Error('Failed to fetch messages');
       const data = await response.json();
       setMessages(data);
@@ -252,7 +252,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
 
   const markMessagesAsRead = async () => {
     try {
-      await fetch(`http://localhost:8070/chat/mark-as-read?familyId=${user.familyId}&userId=${user.id}`, {
+      await fetch(`https://backend-hc.up.railway.app/chat/mark-as-read?familyId=${user.familyId}&userId=${user.id}`, {
         method: 'POST'
       });
     } catch (error) {
@@ -274,7 +274,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
       formData.append('file', file);
       
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `http://localhost:8070/chat/upload`, true);
+      xhr.open('POST', `https://backend-hc.up.railway.app/chat/upload`, true);
       
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {

@@ -269,7 +269,7 @@ const Posts: React.FC<PostsProps> = ({
   const [userLikeMap, setUserLikeMap] = useState<Record<string, string | null>>({});
   
   const createStompClient = () => {
-    const socket = new SockJS('http://localhost:8070/ws');
+    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
     const stompClient = Stomp.over(() => new WebSocket(socket.url));
     
     // Configure reconnect settings
@@ -295,12 +295,12 @@ const Posts: React.FC<PostsProps> = ({
       for (const post of posts) {
         try {
           // Obtener conteo de likes
-          const countRes = await axios.get(`http://localhost:8070/likes/post/${post.id}/count`);
+          const countRes = await axios.get(`https://backend-hc.up.railway.app/likes/post/${post.id}/count`);
           updatedLikes[post.id] = countRes.data;
     
           // Obtener like del usuario actual
           try {
-            const likeRes = await axios.get(`http://localhost:8070/likes/by-user`, {
+            const likeRes = await axios.get(`https://backend-hc.up.railway.app/likes/by-user`, {
               params: {
                 userId: userId,
                 postId: post.id
@@ -438,7 +438,7 @@ const Posts: React.FC<PostsProps> = ({
 
   const fetchCommentsCount = async (postId: string) => {
     try {
-      const response = await axios.get(`http://localhost:8070/comments/count/${postId}`);
+      const response = await axios.get(`https://backend-hc.up.railway.app/comments/count/${postId}`);
       return response.data; // Esto debería ser el número total de comentarios
     } catch (error) {
       console.error('Error fetching comments count:', error);
@@ -490,10 +490,10 @@ const Posts: React.FC<PostsProps> = ({
       setIsLoading(true);
       
       const [userPosts, familyPosts] = await Promise.all([
-        axios.get(`http://localhost:8070/publications/user/${userId}`, {
+        axios.get(`https://backend-hc.up.railway.app/publications/user/${userId}`, {
             params: { includeTaggedUsers: true } // Nuevo parámetro
         }),
-        axios.get(`http://localhost:8070/publications/family/${familyId}`, {
+        axios.get(`https://backend-hc.up.railway.app/publications/family/${familyId}`, {
             params: { includeTaggedUsers: true } // Nuevo parámetro
         })
       ]);
@@ -544,7 +544,7 @@ const Posts: React.FC<PostsProps> = ({
     if (familyId) {
       const fetchFamilyMembers = async () => {
         try {
-          const response = await axios.get(`http://localhost:8070/family/${familyId}/members`);
+          const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
           setFamilyMembers(response.data);
         } catch (error) {
           console.error('Error fetching family members:', error);
@@ -555,7 +555,7 @@ const Posts: React.FC<PostsProps> = ({
   }, [familyId]);
 
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8070/ws');
+    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
     const stompClient = Stomp.over(socket);
   
     stompClient.connect({}, () => {
@@ -646,7 +646,7 @@ const Posts: React.FC<PostsProps> = ({
     if (!confirmed || !postId) return;
     
     try {
-      await axios.delete(`http://localhost:8070/publications/delete/${postId}`);
+      await axios.delete(`https://backend-hc.up.railway.app/publications/delete/${postId}`);
       setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       
       const stompClient = createStompClient();
