@@ -1,5 +1,5 @@
 server:
-  port: 8070
+  port: ${PORT:8080}
 
 application:
   security:
