@@ -259,7 +259,7 @@ function App() {
       }
       
       // Redirigir si no autenticado
-      window.location.href = 'https://https://auth-hc.up.railway.app/';
+      window.location.href = 'https://auth-hc.up.railway.app/';
     };
   
     checkAuth();
