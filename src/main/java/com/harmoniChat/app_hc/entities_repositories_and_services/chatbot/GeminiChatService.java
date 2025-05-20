@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 public class GeminiChatService {
 
-    private static final String GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro-exp:generateContent?key=";
+    private static final String GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
 
     private final String apiKey;
     private final RestTemplate restTemplate;
