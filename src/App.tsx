@@ -259,7 +259,7 @@ function App() {
       }
       
       // Redirigir si no autenticado
-      window.location.href = 'https://https://backend-hc.up.railway.app/';
+      window.location.href = 'https://https://auth-hc.up.railway.app/';
     };
   
     checkAuth();
@@ -382,7 +382,7 @@ function App() {
     localStorage.removeItem('pendingChatBotMessages');
     
     setCurrentUser(null);
-    window.location.href = 'https://backend-hc.up.railway.app/';
+    window.location.href = 'https://auth-hc.up.railway.app/';
   };
 
   const renderContent = () => {

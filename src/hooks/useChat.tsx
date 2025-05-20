@@ -45,7 +45,7 @@ const useChat = (user: User) => {
   // Configurar WebSocket
   useEffect(() => {
     if (user.familyId) {
-      const newSocket = io('http://localhost:8070', {
+      const newSocket = io('https://backend-hc.up.railway.app/', {
         path: '/ws',
         transports: ['websocket'],
         query: { familyId: user.familyId, userId: user.id }
