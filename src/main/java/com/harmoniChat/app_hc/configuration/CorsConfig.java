@@ -11,6 +11,7 @@ public class CorsConfig implements WebMvcConfigurer {
                         "https://auth-hc.up.railway.app",
                         "https://app-hc.up.railway.app",
                         "http://localhost:3000",
+                        "http://localhost:3001",
                         "http://localhost:5500"
                 )
                 .allowCredentials(true)
