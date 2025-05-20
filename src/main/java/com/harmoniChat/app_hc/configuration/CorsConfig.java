@@ -7,7 +7,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:4200","http://localhost:3000", "http://localhost:3001")
+                .allowedOrigins(
+                        "https://auth-hc.up.railway.app",
+                        "https://app-hc.up.railway.app",
+                        "http://localhost:3000",
+                        "http://localhost:5500"
+                )
                 .allowCredentials(true)
                 .allowedHeaders("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
