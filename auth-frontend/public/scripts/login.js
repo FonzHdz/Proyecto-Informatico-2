@@ -137,7 +137,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     });
     
     try {
-        const response = await fetch('http://localhost:8070/user/login', {
+        const response = await fetch('https://backend-hc.up.railway.app/user/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const userData = encodeURIComponent(JSON.stringify(data.user));
         
         setTimeout(() => {
-            window.location.href = `http://localhost:3001?user=${userData}`;
+            window.location.href = `https://app-hc.up.railway.app/?user=${userData}`;
         }, 1500);
         
     } catch (error) {

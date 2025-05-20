@@ -205,7 +205,7 @@ async function validarCedula() {
     if (!documentNumber || !documentType) return false;
     
     try {
-        const response = await axios.get('http://localhost:8070/user/check-document', {
+        const response = await axios.get('https://backend-hc.up.railway.app/user/check-document', {
             params: { documentType, documentNumber }
         });
         
@@ -329,7 +329,7 @@ async function registrarUsuario() {
     });
 
     try {
-        const response = await axios.post('http://localhost:8070/user/register', formData);
+        const response = await axios.post('https://backend-hc.up.railway.app/user/register', formData);
         
         // Cerrar loader
         await loader.close();
