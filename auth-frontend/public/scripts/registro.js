@@ -19,7 +19,6 @@ setInterval(() => {
 
 updateCarousel();
 
-// Funciones para notificaciones Toast
 function showSuccessToast(message) {
     const Toast = Swal.mixin({
         toast: true,
@@ -31,11 +30,11 @@ function showSuccessToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#4caf50', // Color de fondo verde
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#4caf50',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
 
     Toast.fire({
@@ -55,11 +54,11 @@ function showErrorToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#f87171', // Color de fondo rojo
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#f87171',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
     
     Toast.fire({
@@ -79,11 +78,11 @@ function showInfoToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#007bff', // Color de fondo azul
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#007bff',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
     
     Toast.fire({
@@ -205,7 +204,7 @@ async function validarCedula() {
     if (!documentNumber || !documentType) return false;
     
     try {
-        const response = await axios.get('https://backend-hc.up.railway.app/user/check-document', {
+        const response = await axios.get(`${BACKEND_URL}/user/check-document`, {
             params: { documentType, documentNumber }
         });
         
@@ -329,7 +328,7 @@ async function registrarUsuario() {
     });
 
     try {
-        const response = await axios.post('https://backend-hc.up.railway.app/user/register', formData);
+        const response = await axios.post(`${BACKEND_URL}/user/register`, formData);
         
         // Cerrar loader
         await loader.close();

@@ -19,7 +19,6 @@ setInterval(() => {
 
 updateCarousel();
 
-// Funciones para notificaciones Toast
 function showSuccessToast(message) {
     const Toast = Swal.mixin({
         toast: true,
@@ -31,11 +30,11 @@ function showSuccessToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#4caf50', // Color de fondo verde
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#4caf50',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
 
     Toast.fire({
@@ -55,11 +54,11 @@ function showErrorToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#f87171', // Color de fondo rojo
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#f87171',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
     
     Toast.fire({
@@ -79,11 +78,11 @@ function showInfoToast(message) {
             toast.addEventListener('mouseenter', Swal.stopTimer);
             toast.addEventListener('mouseleave', Swal.resumeTimer);
         },
-        background: '#007bff', // Color de fondo azul
-        iconColor: '#fff', // Color del ícono blanco
-        color: '#fff', // Color del texto blanco
-        padding: '20px', // Espaciado
-        borderRadius: '8px' // Bordes redondeados
+        background: '#007bff',
+        iconColor: '#fff',
+        color: '#fff',
+        padding: '20px',
+        borderRadius: '8px'
     });
     
     Toast.fire({
@@ -137,7 +136,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     });
     
     try {
-        const response = await fetch('https://backend-hc.up.railway.app/user/login', {
+        const response = await fetch(`${BACKEND_URL}/user/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -175,7 +174,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const userData = encodeURIComponent(JSON.stringify(data.user));
         
         setTimeout(() => {
-            window.location.href = `https://app-hc.up.railway.app/?user=${userData}`;
+            window.location.href = `${APP_URL}/?user=${userData}`;
         }, 1500);
         
     } catch (error) {
