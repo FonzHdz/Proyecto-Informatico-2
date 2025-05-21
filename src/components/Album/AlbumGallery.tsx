@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import AlbumCard from '../Album/AlbumCard';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import axios from 'axios';
 
 const GalleryContainer = styled.div`
@@ -313,12 +314,17 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
 
   // Funciones
   const fetchAlbums = async () => {
-    setLoading(true);
     try {
-      const response = await axios.get(`https://backend-hc.up.railway.app/albums/family/${familyId}`);
-      setAlbums(response.data); // Los álbumes ya incluirán postCount
+      setLoading(true);
+      const response = await axios.get(`${getBackendUrl()}/albums/family/${familyId}`);
+      setAlbums(response.data);
     } catch (error) {
-      // manejo de errores
+      console.error('Error fetching albums:', error);
+      showAlert({
+        title: 'Error',
+        message: 'No se pudieron cargar los álbumes',
+        showCancel: false
+      });
     } finally {
       setLoading(false);
     }
@@ -326,25 +332,44 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
 
   const fetchAvailablePosts = async () => {
     try {
-      const response = await axios.get(`https://backend-hc.up.railway.app/publications/family/${familyId}/available-photos`);
+      const response = await axios.get(`${getBackendUrl()}/publications/family/${familyId}/available-photos`);
       if (response.data && response.data.length > 0) {
         setAvailablePosts(response.data);
       } else {
-        showAlert({ title: 'Información', message: 'No hay posts con imágenes disponibles' });
+        showAlert({
+          title: 'Información',
+          message: 'No hay posts con imágenes disponibles',
+          showCancel: false
+        });
       }
     } catch (error) {
-      console.error('Error fetching available posts:', error);
+      console.error('Error fetching available photos:', error);
+      showAlert({
+        title: 'Error',
+        message: 'No se pudieron cargar las fotos disponibles',
+        showCancel: false
+      });
     }
   };
 
   const handleGenerateAlbums = async () => {
-    setLoading(true);
     try {
-      await axios.post(`https://backend-hc.up.railway.app/albums/generate/${familyId}`);
-      showAlert({ title: 'Éxito', message: 'Álbumes generados automáticamente' });
+      setLoading(true);
+      await axios.post(`${getBackendUrl()}/albums/generate/${familyId}`);
+      showAlert({
+        title: 'Éxito',
+        message: 'Álbumes generados automáticamente',
+        showCancel: false
+      });
       await fetchAlbums();
     } catch (error) {
-      showAlert({ title: 'Error', message: 'Error al generar álbumes automáticos' });
+      console.error('Error generating albums:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Error al generar álbumes',
+        showCancel: false
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -352,19 +377,29 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
   const handleDeleteAlbum = async (albumId: string) => {
     const confirmed = await showAlert({
       title: 'Eliminar álbum',
-      message: '¿Estás seguro de que quieres eliminar este álbum?',
+      message: '¿Estás seguro de que deseas eliminar este álbum?',
+      showCancel: true,
       confirmText: 'Eliminar',
       cancelText: 'Cancelar'
     });
-    
-    if (!confirmed) return;
-    
-    try {
-      await axios.delete(`https://backend-hc.up.railway.app/albums/delete/${albumId}`);
-      setAlbums(prev => prev.filter(album => album.id !== albumId));
-      showAlert({ title: 'Éxito', message: 'Álbum eliminado correctamente' });
-    } catch (error) {
-      showAlert({ title: 'Error', message: 'No se pudo eliminar el álbum' });
+
+    if (confirmed) {
+      try {
+        await axios.delete(`${getBackendUrl()}/albums/delete/${albumId}`);
+        setAlbums(prev => prev.filter(album => album.id !== albumId));
+        showAlert({
+          title: 'Éxito',
+          message: 'Álbum eliminado correctamente',
+          showCancel: false
+        });
+      } catch (error) {
+        console.error('Error deleting album:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudo eliminar el álbum',
+          showCancel: false
+        });
+      }
     }
   };
 
@@ -373,32 +408,45 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
       showAlert({ title: 'Error', message: 'El título del álbum es requerido' });
       return;
     }
-
-    if (selectedPosts.length < 1) {
-      showAlert({ title: 'Error', message: 'Selecciona al menos un post para el álbum' });
+    
+    if (selectedPosts.length === 0) {
+      showAlert({
+        title: 'Error',
+        message: 'Por favor, selecciona al menos una foto',
+        showCancel: false
+      });
       return;
     }
 
     try {
-        setLoading(true);
-        const response = await axios.post(`https://backend-hc.up.railway.app/albums/create`, selectedPosts, {
-          params: {
-            title: newAlbumData.title,
-            description: newAlbumData.description,
-            familyId: familyId
-          },
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-      showAlert({ title: 'Éxito', message: 'Álbum creado correctamente' });
+      setLoading(true);
+      await axios.post(`${getBackendUrl()}/albums/create`, selectedPosts, {
+        params: {
+          title: newAlbumData.title,
+          description: newAlbumData.description,
+          familyId: familyId
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      showAlert({
+        title: 'Éxito',
+        message: 'Álbum creado correctamente',
+        showCancel: false
+      });
       setShowCreateModal(false);
-      setNewAlbumData({ title: '', description: '', type: 'THEMATIC' });
+      setNewAlbumData({ title: '', description: '', type: 'FAMILIA' });
       setSelectedPosts([]);
       await fetchAlbums();
     } catch (error) {
-      showAlert({ title: 'Error', message: 'No se pudo crear el álbum' });
+      console.error('Error creating album:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Error al crear el álbum',
+        showCancel: false
+      });
+    } finally {
       setLoading(false);
     }
   };

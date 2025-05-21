@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -225,7 +226,7 @@ const CreateEmotion: React.FC<CreateEmotionProps> = ({ isOpen, onClose, onSubmit
         formData.append('defaultImagePath', defaultImagePath);
       }
       
-      await axios.post('https://backend-hc.up.railway.app/emotion/new', formData, {
+      await axios.post(`${getBackendUrl()}/emotion/new`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

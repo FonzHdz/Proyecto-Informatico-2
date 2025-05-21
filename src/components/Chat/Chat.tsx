@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -128,12 +129,14 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('https://backend-hc.up.railway.app/ws'),
+      webSocketFactory: () => new SockJS(`${getBackendUrl()}/ws`),
       connectHeaders: {
         'user-id': user.id,
         'family-id': typeof user.familyId === 'string' ? user.familyId : user.familyId.id
       },
-      debug: (str) => console.debug(str),
+      debug: (str) => {
+        console.debug(str);
+      },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -186,7 +189,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`https://backend-hc.up.railway.app/chat/messages?familyId=${user.familyId}`);
+      const response = await fetch(`${getBackendUrl()}/chat/messages?familyId=${user.familyId}`);
       if (!response.ok) throw new Error('Failed to fetch messages');
       const data = await response.json();
       setMessages(data);
@@ -252,7 +255,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
 
   const markMessagesAsRead = async () => {
     try {
-      await fetch(`https://backend-hc.up.railway.app/chat/mark-as-read?familyId=${user.familyId}&userId=${user.id}`, {
+      await fetch(`${getBackendUrl()}/chat/mark-as-read?familyId=${user.familyId}&userId=${user.id}`, {
         method: 'POST'
       });
     } catch (error) {
@@ -274,7 +277,7 @@ const Chat: React.FC<{ user: User }> = ({ user }) => {
       formData.append('file', file);
       
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `https://backend-hc.up.railway.app/chat/upload`, true);
+      xhr.open('POST', `${getBackendUrl()}/chat/upload`, true);
       
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -319,12 +320,15 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [phoneError, setPhoneError] = useState('');
   const { showAlert } = useAlert();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchFamilyMembers = async () => {
       try {
         const familyId = typeof user.familyId === 'string' ? user.familyId : user.familyId.id;
-        const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
+        const response = await axios.get(`${getBackendUrl()}/family/${familyId}/members`);
         setFamilyMembers(response.data);
       } catch (error) {
         console.error('Error fetching family members:', error);
@@ -362,27 +366,25 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
     return '';
   };
 
-  const handleSave = async () => {
-    const phoneValidationError = validatePhone(editedUser.phoneNumber || '');
-    if (phoneValidationError) {
-        setPhoneError(phoneValidationError);
-        return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
     try {
-        const response = await axios.put(`https://backend-hc.up.railway.app/user/${user.id}`, {
-            email: editedUser.email,
-            phoneNumber: editedUser.phoneNumber
-        });
-        
-      setEditedUser(response.data.user);
+      setIsSubmitting(true);
+      const response = await axios.put(`${getBackendUrl()}/user/${user.id}`, {
+        email: editedUser.email,
+        phoneNumber: editedUser.phoneNumber
+      });
+
       setUser(response.data.user);
+      setEditedUser(response.data.user);
       setIsEditing(false);
-      setPhoneError('');
+      setError('');
       showAlert({
         title: 'Perfil actualizado',
-        message: 'Tu información fue guardada correctamente.',
-        showCancel: false,
+        message: 'Tu información fue guardada correctamente',
+        showCancel: false
       });
     } catch (error) {
       console.error('Error updating user:', error);
@@ -391,8 +393,12 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
         message: 'Error al actualizar los datos. Por favor, inténtalo de nuevo.',
         showCancel: false,
       });
+      console.error('Error updating profile:', error);
+      setError('Error al actualizar el perfil');
+    } finally {
+      setIsSubmitting(false);
     }
-};
+  };
 
   const handleCancel = () => {
     setEditedUser(user);
@@ -402,6 +408,15 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
 
   const handleEdit = () => {
     setIsEditing(true);
+  };
+
+  const validateForm = () => {
+    const phoneValidationError = validatePhone(editedUser.phoneNumber || '');
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -452,7 +467,7 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
             </InfoGrid>
             {isEditing ? (
               <div style={{ display: 'flex', gap: '20px' }}>
-                <EditButton onClick={handleSave}>Guardar cambios</EditButton>
+                <EditButton onClick={handleSubmit}>Guardar cambios</EditButton>
                 <EditButton 
                   onClick={handleCancel}
                   style={{ background: '#95a5a6' }}

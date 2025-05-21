@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAlert } from '../../context/AlertContext';
 import { Stomp } from '@stomp/stompjs';
+import { getBackendUrl } from '../../utils/api';
 import SockJS from 'sockjs-client';
 import styled from 'styled-components';
 import axios from 'axios';
@@ -319,10 +320,10 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   useEffect(() => {
     if (!isOpen || !postId) return;
-  
-    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
+
+    const socket = new SockJS(`${getBackendUrl()}/ws`);
     const stompClient = Stomp.over(socket);
-  
+
     stompClient.connect({}, () => {
       const subscription = stompClient.subscribe(`/topic/comments/${postId}`, (message) => {
         const newCommentFromSocket = JSON.parse(message.body);
@@ -351,7 +352,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`https://backend-hc.up.railway.app/comments/post/${postId}`);
+      const response = await axios.get(`${getBackendUrl()}/comments/post/${postId}`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -371,7 +372,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   }, [isOpen, postId]);
   
   useEffect(() => {
-    const socket = new SockJS('https://backend-hc.up.railway.app/ws');
+    const socket = new SockJS(`${getBackendUrl()}/ws`);
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, () => {
@@ -424,15 +425,15 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-  
+
     try {
       setIsSubmitting(true);
-      await axios.post('https://backend-hc.up.railway.app/comments/send', {
+      await axios.post(`${getBackendUrl()}/comments/send`, {
         content: newComment,
         postId,
         userId: currentUser.id
       });
-  
+
       setNewComment('');
       setShowEmojiPicker(false);
     } catch (error) {
@@ -458,10 +459,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     if (!confirmed) return;
     
     try {
-      await axios.delete(`https://backend-hc.up.railway.app/comments/delete/${commentId}`);
-      
+      await axios.delete(`${getBackendUrl()}/comments/delete/${commentId}`);
       setComments(prev => prev.filter(comment => comment.id !== commentId));
-      
       setPosts(prevPosts => 
         prevPosts.map(post => 
           post.id === postId ? { 

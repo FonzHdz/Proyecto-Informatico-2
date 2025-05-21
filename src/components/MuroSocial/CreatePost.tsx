@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
-import axios  from 'axios';
+import axios from 'axios';
 
 const PopupOverlay = styled.div`
   position: fixed;
@@ -263,7 +264,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         try {
           setIsLoadingMembers(true);
           setMembersError(null);
-          const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
+          const response = await axios.get(`${getBackendUrl()}/family/${familyId}/members`);
           setFamilyMembers(response.data);
         } catch (err) {
           console.error('Error al obtener miembros de la familia:', err);
@@ -348,7 +349,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         formData.append('file', image);
       }
 
-      const response = await axios.post('https://backend-hc.up.railway.app/publications/new', formData, {
+      const response = await axios.post(`${getBackendUrl()}/publications/new`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

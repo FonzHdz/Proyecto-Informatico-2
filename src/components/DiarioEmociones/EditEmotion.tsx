@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -307,7 +308,7 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
       }
       
       const response = await axios.patch(
-        `https://backend-hc.up.railway.app/emotion/update/${emotionId}`, 
+        `${getBackendUrl()}/emotion/update/${emotionId}`, 
         formData, 
         {
           headers: {
