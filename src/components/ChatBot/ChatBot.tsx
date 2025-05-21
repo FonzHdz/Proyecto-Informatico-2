@@ -5,6 +5,7 @@ import SockJS from 'sockjs-client';
 import ChatBotMessage from './ChatBotMessage';
 import MarkdownMessage from '../MarkdownMessage';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 
 const ChatContainer = styled.div`
   display: flex;
@@ -329,19 +330,24 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
 
   useEffect(() => {
     const client = new Client({
-      webSocketFactory: () => new SockJS('https://backend-hc.up.railway.app/ws'),
-      connectHeaders: { 'user-id': user.current?.id || 'anonymous' },
+      webSocketFactory: () => new SockJS(`${getBackendUrl()}/ws`),
+      connectHeaders: {
+        'user-id': userId || 'anonymous'
+      },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('Connected');
+        console.log('Connected to WebSocket');
         if (user.current?.familyId) {
           client.subscribe(`/topic/family.${user.current.familyId}.chatbot`, handleBotMessage);
         }
         client.subscribe(`/user/queue/chatbot`, handleBotMessage);
         client.subscribe(`/user/queue/chatbot.errors`, handleBotError);
       },
+      onDisconnect: () => {
+        console.log('Disconnected from WebSocket');
+      }
     });
 
     stompClient.current = client;
@@ -350,7 +356,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
     return () => {
       client.deactivate();
     };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -385,17 +391,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://backend-hc.up.railway.app/api/v1/chatbot/chat', {
+      const response = await fetch(`${getBackendUrl()}/chatbot/chat`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(localStorage.getItem('token') && { 
-            'Authorization': `Bearer ${localStorage.getItem('token')}` 
+          ...(localStorage.getItem('token') && {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           })
         },
         body: JSON.stringify({
           message: inputMessage,
-          userId: userId, // Usamos la prop directamente
+          userId: userId,
           history: messages.map(msg => ({
             role: msg.role,
             content: msg.content
@@ -417,7 +423,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId }) => {
         },
       ]);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error sending message:', error);
       showAlert({ 
         title: 'Error', 
         message: 'No se pudo obtener respuesta del chatbot' 

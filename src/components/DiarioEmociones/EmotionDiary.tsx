@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAlert } from '../../context/AlertContext';
+import { getBackendUrl } from '../../utils/api';
 import styled from 'styled-components';
 import CreateEmotion from './CreateEmotion';
 import EditEmotion from './EditEmotion';
@@ -210,24 +211,23 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
     const fetchEmotions = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`https://backend-hc.up.railway.app/emotion/user/${userId}`);
-        
-        const formattedEmotions = response.data
-        .map((item: any) => ({
-          id: item.id,
-          emotion: item.emotion || item.name,
-          date: item.date,
-          image: item.fileUrl,
-          description: item.description,
-          creationDate: new Date(item.date)
-        }))
-        .sort((a: any, b: any) => a.creationDate - b.creationDate);
-        
-        setEmotions(formattedEmotions);
-        setError(null);
-      } catch (err) {
-        console.error('Error al obtener las emociones:', err);
-        setError('No se pudieron cargar las emociones. Intenta nuevamente.');
+        const response = await axios.get(`${getBackendUrl()}/emotion/user/${userId}`);
+        const emotions = response.data.map((emotion: any) => ({
+          id: emotion.id,
+          emotion: emotion.emotion || emotion.name,
+          date: emotion.date,
+          image: emotion.fileUrl,
+          description: emotion.description,
+          creationDate: new Date(emotion.date)
+        })).sort((a: any, b: any) => b.creationDate.getTime() - a.creationDate.getTime());
+        setEmotions(emotions);
+      } catch (error) {
+        console.error('Error fetching emotions:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudieron cargar las emociones',
+          showCancel: false
+        });
       } finally {
         setIsLoading(false);
       }
@@ -240,7 +240,7 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
 
   const handleCreateEmotion = async () => {
     try {
-      const response = await axios.get(`https://backend-hc.up.railway.app/emotion/user/${userId}`);
+      const response = await axios.get(`${getBackendUrl()}/emotion/user/${userId}`);
       const formattedEmotions = response.data
         .map((item: any) => ({
           id: item.id,
@@ -272,13 +272,13 @@ const EmotionDiary: React.FC<EmotionDiaryProps> = ({ userId }) => {
     if (!confirmed) return;
     
     try {
-      await axios.delete(`https://backend-hc.up.railway.app/emotion/delete/${id}`);
+      await axios.delete(`${getBackendUrl()}/emotion/delete/${id}`);
       setEmotions(prev => prev.filter(emotion => emotion.id !== id));
     } catch (err) {
       console.error('Error al eliminar la emoción:', err);
       showAlert({
         title: 'Error',
-        message: 'Error al eliminar la emoción',
+        message: 'No se pudo eliminar la emoción',
         showCancel: false
       });
     }

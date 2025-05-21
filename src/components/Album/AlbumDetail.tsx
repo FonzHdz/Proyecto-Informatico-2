@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAlert } from '../../context/AlertContext';
 import { getMediaType } from '../../utils/mediaUtils';
+import { getBackendUrl } from '../../utils/api';
 import PhotoViewer from './PhotoViewer';
 import Modal from '../Modal';
 import axios from 'axios';
@@ -486,10 +487,15 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
     const fetchAlbumPhotos = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`https://backend-hc.up.railway.app/albums/${album.id}/photos`);
+        const response = await axios.get(`${getBackendUrl()}/albums/${album.id}/photos`);
         setPhotos(response.data);
       } catch (error) {
-        showAlert({ title: 'Error', message: 'No se pudieron cargar las fotos del álbum' });
+        console.error('Error fetching photos:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudieron cargar las fotos del álbum',
+          showCancel: false
+        });
       } finally {
         setLoading(false);
       }
@@ -519,80 +525,114 @@ const AlbumDetail: React.FC<AlbumDetailProps> = ({
     const fetchAvailablePosts = async () => {
       try {
         const response = await axios.get(
-          `https://backend-hc.up.railway.app/publications/family/${familyId}/available-photos`,
+          `${getBackendUrl()}/publications/family/${familyId}/available-photos`,
           { params: { albumId: album.id } }
         );
         setAvailablePosts(response.data);
       } catch (error) {
-        showAlert({ title: 'Error', message: 'No se pudieron cargar los posts disponibles' });
+        console.error('Error fetching available photos:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudieron cargar los posts disponibles',
+          showCancel: false
+        });
       }
     };
 
     const handleAddPhotos = async () => {
+      if (selectedPosts.length === 0) {
+        showAlert({
+          title: 'Error',
+          message: 'Por favor, selecciona al menos una foto',
+          showCancel: false
+        });
+        return;
+      }
+
       try {
-        await axios.post(`https://backend-hc.up.railway.app/albums/${album.id}/add-posts`, {
+        await axios.post(`${getBackendUrl()}/albums/${album.id}/add-posts`, {
           postIds: selectedPosts
         });
-        showAlert({ 
-          title: 'Éxito', 
+        showAlert({
+          title: 'Éxito',
           message: `Se agregaron ${selectedPosts.length} fotos al álbum`,
+          showCancel: false
         });
         setShowAddPhotos(false);
         setSelectedPosts([]);
         fetchAlbumPhotos();
       } catch (error) {
-        showAlert({ title: 'Error', message: 'No se pudieron agregar las fotos' });
+        console.error('Error adding photos:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudieron agregar las fotos al álbum',
+          showCancel: false
+        });
       }
     };
 
     const handleUpdateTitle = async () => {
       if (!albumTitle.trim()) {
-        showAlert({ title: 'Error', message: 'El nombre del álbum no puede estar vacío' });
+        showAlert({
+          title: 'Error',
+          message: 'El título no puede estar vacío',
+          showCancel: false
+        });
         return;
       }
 
       try {
-        const response = await axios.put(`https://backend-hc.up.railway.app/albums/${album.id}`, {
+        await axios.put(`${getBackendUrl()}/albums/${album.id}`, {
           title: albumTitle
         });
-        
         setAlbum(prev => ({ ...prev, title: albumTitle }));
-        
-        showAlert({ 
-          title: 'Éxito', 
+        showAlert({
+          title: 'Éxito',
           message: 'Nombre del álbum actualizado',
+          showCancel: false
         });
         setShowEditTitle(false);
       } catch (error) {
-        showAlert({ title: 'Error', message: 'No se pudo actualizar el nombre' });
-        setAlbumTitle(album.title);
+        console.error('Error updating album title:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudo actualizar el nombre del álbum',
+          showCancel: false
+        });
       }
     };
 
     const handleSetCover = async (photoUrl: string) => {
       try {
-        await axios.put(`https://backend-hc.up.railway.app/albums/${album.id}/cover`, {
+        await axios.put(`${getBackendUrl()}/albums/${album.id}/cover`, {
           coverImageUrl: photoUrl
         });
-        showAlert({ 
-          title: 'Éxito', 
+        showAlert({
+          title: 'Éxito',
           message: 'Portada del álbum actualizada',
+          showCancel: false
         });
       } catch (error) {
-        showAlert({ title: 'Error', message: 'No se pudo actualizar la portada' });
+        console.error('Error setting album cover:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudo actualizar la portada del álbum',
+          showCancel: false
+        });
       }
     };
 
     const handleDeletePhoto = async (photoId: string) => {
       try {
-        await axios.delete(`https://backend-hc.up.railway.app/albums/${album.id}/photos/${photoId}`);
-        
+        await axios.delete(`${getBackendUrl()}/albums/${album.id}/photos/${photoId}`);
         const updatedPhotos = photos.filter(photo => photo.id !== photoId);
         setPhotos(updatedPhotos);
       } catch (error) {
-        showAlert({ 
-          title: 'Error', 
-          message: 'No se pudo eliminar la foto'
+        console.error('Error deleting photo:', error);
+        showAlert({
+          title: 'Error',
+          message: 'No se pudo eliminar la foto',
+          showCancel: false
         });
       }
     };

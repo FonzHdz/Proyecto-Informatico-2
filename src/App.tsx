@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertProvider } from './context/AlertContext';
+import { getBackendUrl, getAuthUrl } from './utils/api';
 import styled from 'styled-components';
 import Posts from './components/MuroSocial/Posts';
 import CreatePost from './components/MuroSocial/CreatePost';
@@ -259,7 +260,7 @@ function App() {
       }
       
       // Redirigir si no autenticado
-      window.location.href = 'https://auth-hc.up.railway.app/';
+      window.location.href = getAuthUrl();
     };
   
     checkAuth();
@@ -269,7 +270,7 @@ function App() {
     try {
       setIsLoadingMembers(true);
       setMembersError(null);
-      const response = await axios.get(`https://backend-hc.up.railway.app/family/${familyId}/members`);
+      const response = await axios.get(`${getBackendUrl()}/family/${familyId}/members`);
       setFamilyMembers(response.data);
     } catch (error) {
       console.error('Error fetching family members:', error);
@@ -382,7 +383,7 @@ function App() {
     localStorage.removeItem('pendingChatBotMessages');
     
     setCurrentUser(null);
-    window.location.href = 'https://auth-hc.up.railway.app/';
+    window.location.href = getAuthUrl();
   };
 
   const renderContent = () => {
