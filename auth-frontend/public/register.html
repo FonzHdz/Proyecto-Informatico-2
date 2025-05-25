@@ -120,18 +120,28 @@
                     </div>
                     
                     <!-- Contraseñas -->
-                    <div class="mb-4 relative">
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
-                               id="password" required type="password"/>
-                    </div>
-                    
-                    <div class="mb-6 relative">
+                        <input id="password" required type="password"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        
+                        <div id="passwordRules" class="text-sm mt-2 space-y-1 hidden">
+                            <p id="ruleLength" class="text-gray-600">❌ Entre 8 y 20 caracteres.</p>
+                            <p id="ruleUpper" class="text-gray-600">❌ Al menos una letra mayúscula.</p>
+                            <p id="ruleLower" class="text-gray-600">❌ Al menos una letra minúscula.</p>
+                            <p id="ruleDigit" class="text-gray-600">❌ Al menos un número.</p>
+                            <p id="ruleSpecial" class="text-gray-600">❌ Al menos un carácter especial.</p>
+                        </div>
+                        </div>
+
+                        <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
-                        <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
-                               id="confirmPassword" required type="password"/>
+                        <input id="confirmPassword" required type="password"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        
+                        <p id="matchMessage" class="text-sm mt-2 text-gray-600 hidden"></p>
                     </div>
-                    
+                         
                     <!-- Sección de invitación (aparece después del registro) -->
                     <div id="invitationSection" class="hidden mb-6 p-4 bg-purple-50 rounded-lg">
                         <h3 class="font-bold text-[#5F3195] mb-2">¡Registro exitoso!</h3>

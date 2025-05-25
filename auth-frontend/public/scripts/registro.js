@@ -141,9 +141,81 @@ function validarCorreo(correo) {
     return regex.test(correo) && correo.length <= 100;
 }
 
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+const passwordRules = document.getElementById("passwordRules");
+const matchMessage = document.getElementById("matchMessage");
+
+const ruleLength = document.getElementById("ruleLength");
+const ruleUpper = document.getElementById("ruleUpper");
+const ruleLower = document.getElementById("ruleLower");
+const ruleDigit = document.getElementById("ruleDigit");
+const ruleSpecial = document.getElementById("ruleSpecial");
+
+function validatePassword(password) {
+  return {
+    length: password.length >= 8 && password.length <= 20,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    digit: /\d/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>_\-+=\\[\]]/.test(password),
+  };
+}
+
+function updateRulesDisplay(password) {
+  const rules = validatePassword(password);
+  const colorOk = "text-purple-600";
+  const colorBad = "text-gray-600";
+
+  function updateRule(el, valid, text) {
+    el.textContent = `${valid ? '✔️' : '❌'} ${text}`;
+    el.classList.remove(colorOk, colorBad);
+    el.classList.add(valid ? colorOk : colorBad);
+  }
+
+  updateRule(ruleLength, rules.length, "Entre 8 y 20 caracteres.");
+  updateRule(ruleUpper, rules.upper, "Al menos una letra mayúscula.");
+  updateRule(ruleLower, rules.lower, "Al menos una letra minúscula.");
+  updateRule(ruleDigit, rules.digit, "Al menos un número.");
+  updateRule(ruleSpecial, rules.special, "Al menos un carácter especial.");
+}
+
+function checkPasswordsMatch() {
+  const pwd = passwordInput.value;
+  const confirm = confirmPasswordInput.value;
+
+  if (pwd && confirm) {
+    matchMessage.classList.remove("hidden");
+    if (pwd === confirm) {
+      matchMessage.textContent = "✔️ Las contraseñas coinciden.";
+      matchMessage.classList.remove("text-gray-600");
+      matchMessage.classList.add("text-purple-600");
+    } else {
+      matchMessage.textContent = "❌ Las contraseñas no coinciden.";
+      matchMessage.classList.remove("text-purple-600");
+      matchMessage.classList.add("text-gray-600");
+    }
+  } else {
+    matchMessage.classList.add("hidden");
+  }
+}
+
+passwordInput.addEventListener("input", () => {
+  const pwd = passwordInput.value;
+  if (pwd.length > 0) {
+    passwordRules.classList.remove("hidden");
+    updateRulesDisplay(pwd);
+  } else {
+    passwordRules.classList.add("hidden");
+  }
+  checkPasswordsMatch();
+});
+
+confirmPasswordInput.addEventListener("input", checkPasswordsMatch);
+
 // Validar Contraseña
 function validarContraseña(password) {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/;
+    const regex = /^(?=.*\p{Ll})(?=.*\p{Lu})(?=.*\d)(?=.*[!@#$%^&*]).{8,20}$/u;
     return regex.test(password);
 }
 
