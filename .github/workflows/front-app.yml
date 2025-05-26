@@ -3,6 +3,8 @@ name: Front App CI/CD
 on:
   push:
     branches: [ "front_app" ]
+  pull_request:
+    branches: [ "front_app" ]
 
 jobs:
   build-and-deploy:
