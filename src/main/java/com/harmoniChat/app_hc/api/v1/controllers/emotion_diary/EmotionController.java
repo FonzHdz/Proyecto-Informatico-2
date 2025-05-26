@@ -170,7 +170,8 @@ public class EmotionController {
             @PathVariable UUID id,
             @RequestPart("emotion") String emotionJson,
             @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "removeImage", required = false) String removeImage) {
+            @RequestParam(value = "removeImage", required = false) String removeImage,
+            @RequestParam(value = "defaultImagePath", required = false) String defaultImagePath) {  // Nuevo parámetro
 
         try {
             // Validar ID
@@ -203,28 +204,28 @@ public class EmotionController {
             emotionToUpdate.setDescription(request.description());
 
             logger.info("Iniciando actualización de emoción con ID: {}", id);
-            logger.debug("Datos recibidos - emotionJson: {}, file: {}, removeImage: {}",
-                    emotionJson, file != null ? file.getOriginalFilename() : "null", removeImage);
+            logger.debug("Datos recibidos - emotionJson: {}, file: {}, removeImage: {}, defaultImagePath: {}",
+                    emotionJson, file != null ? file.getOriginalFilename() : "null", removeImage, defaultImagePath);
 
             // Manejar imagen
-            logger.debug("Estado actual de la imagen: {}", emotionToUpdate.getFilesURL());
             if ("true".equalsIgnoreCase(removeImage)) {
-                // Eliminar imagen existente si hay una
+                // Eliminar imagen existente solo si no es una predeterminada
                 if (emotionToUpdate.getFilesURL() != null &&
                         !emotionToUpdate.getFilesURL().startsWith("/emotions/")) {
                     try {
                         blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
                     } catch (Exception e) {
-                        // Log error pero continuar
-                        System.err.println("Error deleting old image: " + e.getMessage());
+                        logger.error("Error deleting old image: {}", e.getMessage());
                     }
                 }
-                emotionToUpdate.setFilesURL(null);
+
+                // Usar la nueva imagen predeterminada si se proporciona
+                emotionToUpdate.setFilesURL(defaultImagePath);
             } else if (file != null && !file.isEmpty()) {
                 // Subir nueva imagen
                 try {
                     String fileUrl = blobStorageService.uploadFile(file, BlobContainerType.EMOTIONS);
-                    // Eliminar imagen anterior si existe
+                    // Eliminar imagen anterior si existe y no es predeterminada
                     if (emotionToUpdate.getFilesURL() != null &&
                             !emotionToUpdate.getFilesURL().startsWith("/emotions/")) {
                         blobStorageService.deleteFile(emotionToUpdate.getFilesURL(), BlobContainerType.EMOTIONS);
@@ -271,17 +272,3 @@ public class EmotionController {
             UUID userId
     ) {}
 }
-
-
-//    public ResponseEntity<Emotion> createEmotion(@PathVariable UUID userId, @RequestBody final EmotionRequest request){
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", Locale.US);
-//        Emotion newEmotion = Emotion.builder()
-//                .userId(userId)
-//                .name(request.name())
-//                .description(request.description())
-//                .filesURL(request.filesURL())
-//                .build();
-//        emotionService.createNew(newEmotion);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(newEmotion);
-//    }
-

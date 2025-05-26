@@ -193,17 +193,30 @@ public class PostController {
     }
 
     @GetMapping("/family/{familyId}")
-    public ResponseEntity<List<PostResponse>> getPostsByFamily(@PathVariable UUID familyId) {
+    public ResponseEntity<List<PostResponse>> getPostsByFamily(
+            @PathVariable UUID familyId,
+            @RequestParam(defaultValue = "true") boolean includeTaggedUsers) {
+
         List<Post> posts = postService.findAllByFamilyId(familyId);
         List<PostResponse> response = posts.stream()
                 .map(this::convertToPostResponse)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 
     private PostResponse convertToPostResponse(Post post) {
         User author = userService.findById(post.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Obtener usuarios etiquetados
+        List<TaggedUserResponse> taggedUsers = Collections.emptyList();
+        if (post.getTaggedUsers() != null) {
+            taggedUsers = post.getTaggedUsers().stream()
+                    .map(user -> new TaggedUserResponse(user.getId(),
+                            user.getFirstName() + " " + user.getLastName()))
+                    .collect(Collectors.toList());
+        }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a", new Locale("es", "CO"));
 
@@ -218,6 +231,7 @@ public class PostController {
                 .likes(0)
                 .comments(0)
                 .userId(post.getUserId())
+                .taggedUsers(taggedUsers) // Asegurar que siempre se incluya
                 .build();
     }
 

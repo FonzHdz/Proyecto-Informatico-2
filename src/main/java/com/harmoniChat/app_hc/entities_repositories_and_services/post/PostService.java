@@ -41,7 +41,13 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public List<Post> findAllByFamilyId(UUID familyId) {
-        return postRepository.findByFamilyIdOrderByCreationDateDesc(familyId);
+        List<Post> posts = postRepository.findByFamilyIdOrderByCreationDateDesc(familyId);
+        posts.forEach(post -> {
+            if (post.getTaggedUsers() != null) {
+                post.getTaggedUsers().size();
+            }
+        });
+        return posts;
     }
 
     public Post create (Post post){

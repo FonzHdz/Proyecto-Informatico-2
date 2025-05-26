@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AlbumRepository extends JpaRepository<Album, UUID> {
@@ -33,4 +34,12 @@ public interface AlbumRepository extends JpaRepository<Album, UUID> {
 
     @Query(value = "SELECT COUNT(*) FROM album_posts WHERE album_id = :albumId", nativeQuery = true)
     int countPostsByAlbumIdNative(@Param("albumId") UUID albumId);
+
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +
+            "FROM Album a JOIN a.posts p " +
+            "WHERE a.familyId = :familyId AND p.id IN :postIds " +
+            "GROUP BY a HAVING COUNT(p) = :postCount")
+    boolean existsByPostIdsAndFamilyId(@Param("postIds") Set<UUID> postIds,
+                                       @Param("familyId") UUID familyId,
+                                       @Param("postCount") long postCount);
 }
