@@ -28,4 +28,4 @@ jobs:
       - name: Deploy to Railway
         run: railway up --service HC-Backend
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_BACKEND }}
