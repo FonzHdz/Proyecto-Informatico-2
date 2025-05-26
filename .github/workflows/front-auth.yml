@@ -10,37 +10,38 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-        run:
-            working-directory: auth-frontend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: Install dependencies
-        working-directory: ./auth-frontend
         run: npm install
+        working-directory: ./auth-frontend
 
       - name: Run tests (if any)
-        working-directory: ./auth-frontend
         run: |
           if [ -f "package.json" ] && grep -q '"test"' package.json; then
             npm test || echo "Tests failed or not implemented"
           else
             echo "No tests found"
           fi
+        working-directory: ./auth-frontend
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Check Railway Auth
+        run: railway whoami
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_AUTH }}
+
       - name: Deploy to Railway
-        working-directory: ./auth-frontend
         run: railway up --service HC-Auth
+        working-directory: ./auth-frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_AUTH }}
