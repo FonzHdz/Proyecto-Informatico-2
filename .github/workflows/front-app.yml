@@ -2,7 +2,7 @@ name: Front App CI/CD
 
 on:
   push:
-    branches: [ "front-app" ]
+    branches: [ "front_app" ]
 
 jobs:
   build-and-deploy:
