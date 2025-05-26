@@ -201,18 +201,48 @@ interface EditEmotionProps {
 }
 
 const emotions = [
-  { id: 'tristeza', icon: '☹️', label: 'Tristeza' },
-  { id: 'alegria', icon: '☺️', label: 'Alegría' },
-  { id: 'calma', icon: '😌', label: 'Calma' },
-  { id: 'enojo', icon: '😠', label: 'Enojo' },
-  { id: 'miedo', icon: '😨', label: 'Miedo' },
-  { id: 'sorpresa', icon: '😲', label: 'Sorpresa' }
+  { id: 'tristeza', icon: '☹️', label: 'Tristeza', defaultImages: 3 },
+  { id: 'alegria', icon: '☺️', label: 'Alegría', defaultImages: 3 },
+  { id: 'calma', icon: '😌', label: 'Calma', defaultImages: 3 },
+  { id: 'enojo', icon: '😠', label: 'Enojo', defaultImages: 3 },
+  { id: 'miedo', icon: '😨', label: 'Miedo', defaultImages: 3 },
+  { id: 'sorpresa', icon: '😲', label: 'Sorpresa', defaultImages: 3 }
 ];
 
 const getEmotionId = (emotionLabel: string) => {
   const emotion = emotions.find(e => e.label.toLowerCase() === emotionLabel.toLowerCase());
   return emotion ? emotion.id : '';
 };
+
+const getRandomDefaultImage = (emotionId: string): string => {
+  const emotion = emotions.find(e => e.id === emotionId);
+  if (!emotion) return '';
+  
+  const randomIndex = Math.floor(Math.random() * emotion.defaultImages) + 1;
+  return `/emotions/${emotionId}/${emotionId}-${randomIndex}.png`;
+};
+
+const getDifferentRandomDefaultImage = (emotionId: string, currentImage: string): string => {
+  const emotion = emotions.find(e => e.id === emotionId);
+  if (!emotion) return '';
+  
+  const possibleImages = Array.from({length: emotion.defaultImages}, (_, i) => 
+    `/emotions/${emotionId}/${emotionId}-${i+1}.png`
+  );
+  
+  const availableImages = possibleImages.filter(img => 
+    !currentImage || !currentImage.includes(`/${emotionId}/`) || img !== currentImage
+  );
+  
+  if (availableImages.length > 0) {
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    return availableImages[randomIndex];
+  }
+  
+  const randomIndex = Math.floor(Math.random() * possibleImages.length);
+  return possibleImages[randomIndex];
+};
+
 
 const EditEmotion: React.FC<EditEmotionProps> = ({ 
   isOpen, 
@@ -229,7 +259,7 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
   const [imagePreview, setImagePreview] = useState(initialImage);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [keepCurrentImage, setKeepCurrentImage] = useState(true);
+  const [removeImage, setRemoveImage] = useState(false);
   const { showAlert } = useAlert();
 
   useEffect(() => {
@@ -238,16 +268,22 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
       setDescription(initialDescription);
       setImagePreview(initialImage);
       setImage(null);
-      setKeepCurrentImage(true);
+      setRemoveImage(false);
       setError('');
     }
   }, [isOpen, initialEmotion, initialDescription, initialImage]);
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
-      setKeepCurrentImage(false);
+      setRemoveImage(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -256,10 +292,11 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
     }
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
     setImage(null);
     setImagePreview('');
-    setKeepCurrentImage(false);
+    setRemoveImage(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,12 +335,16 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
         userId: user.id
       };
   
-      // Convertir el objeto a JSON string
       formData.append('emotion', JSON.stringify(emotionData));
   
-      if (image && !keepCurrentImage) {
+      if (image) {
         formData.append('file', image);
-      } else if (!keepCurrentImage && !image) {
+      } else if (removeImage) {
+        const defaultImagePath = initialEmotion.toLowerCase() === emotionLabel.toLowerCase()
+          ? getDifferentRandomDefaultImage(selectedEmotion, initialImage)
+          : getRandomDefaultImage(selectedEmotion);
+        
+        formData.append('defaultImagePath', defaultImagePath);
         formData.append('removeImage', 'true');
       }
       
@@ -317,12 +358,12 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
         }
       );
       
-      // Verificar respuesta exitosa
       if (response.status === 200) {
         setSelectedEmotion('');
         setDescription('');
         setImage(null);
         setImagePreview('');
+        setRemoveImage(false);
         
         if (onUpdate) {
           onUpdate();
@@ -384,28 +425,28 @@ const EditEmotion: React.FC<EditEmotionProps> = ({
               accept="image/*"
               onChange={handleImageChange}
               style={{ display: 'none' }}
+              ref={fileInputRef}
               id="media-upload"
             />
-            <label htmlFor="media-upload">
-              <ImageContainer>
-                <ImagePreview
-                  style={imagePreview ? { 
-                    backgroundImage: `url(${imagePreview})`,
-                    cursor: 'pointer'
-                  } : {}}
+            <ImageContainer>
+              {imagePreview && (
+                <DeleteButton 
+                  onClick={handleRemoveImage}
+                  type="button"
                 >
-                  {!imagePreview && 'Haz clic para cambiar la imagen'}
-                </ImagePreview>
-                {imagePreview && (
-                  <DeleteButton onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveImage();
-                  }}>
-                    <i className="fi fi-rr-trash"></i>
-                  </DeleteButton>
-                )}
-              </ImageContainer>
-            </label>
+                  <i className="fi fi-rr-trash"></i>
+                </DeleteButton>
+              )}
+              <ImagePreview
+                onClick={handleImageClick}
+                style={imagePreview ? { 
+                  backgroundImage: `url(${imagePreview})`,
+                  cursor: 'pointer'
+                } : {}}
+              >
+                {!imagePreview && 'Haz clic para cambiar la imagen'}
+              </ImagePreview>
+            </ImageContainer>
           </FormSection>
 
           {error && <div style={{ color: 'red', fontSize: '14px' }}>{error}</div>}

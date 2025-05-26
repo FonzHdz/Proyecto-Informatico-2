@@ -484,7 +484,7 @@ const Posts: React.FC<PostsProps> = ({
         tags: tags.filter(tag => tag.id), // Filtrar tags sin ID
         userId: post.userId || post.user?.id || ''
     };
- };
+  };
 
   const fetchPosts = async () => {
     try {
@@ -492,10 +492,10 @@ const Posts: React.FC<PostsProps> = ({
       
       const [userPosts, familyPosts] = await Promise.all([
         axios.get(`${getBackendUrl()}/publications/user/${userId}`, {
-            params: { includeTaggedUsers: true } // Nuevo parámetro
+          params: { includeTaggedUsers: true }
         }),
         axios.get(`${getBackendUrl()}/publications/family/${familyId}`, {
-            params: { includeTaggedUsers: true } // Nuevo parámetro
+          params: { includeTaggedUsers: true }
         })
       ]);
 
@@ -558,45 +558,41 @@ const Posts: React.FC<PostsProps> = ({
   useEffect(() => {
     const socket = new SockJS(`${getBackendUrl()}/ws`);
     const stompClient = Stomp.over(socket);
-  
+
     stompClient.connect({}, () => {
+      // Suscripción para nuevos posts
       stompClient.subscribe('/topic/posts', (message) => {
         const newPost = JSON.parse(message.body);
         setPosts(prev => {
-          // Si el post ya existe, mantenemos el orden actual
-          if (prev.some(post => post.id === newPost.id)) return prev;
+          // Actualizar el post si ya existe
+          const updatedPosts = prev.map(post => 
+            post.id === newPost.id ? normalizePost(newPost) : post
+          );
           
-          // Normaliza el nuevo post para asegurar consistencia
-          const normalizedPost = normalizePost(newPost);
-          // Si el post tiene un ID que ya existe, lo reemplazamos
-          
-          // Inserta en la posición correcta manteniendo el orden
-          return [...prev, normalizedPost]
-            .sort((a, b) => {
-              const dateA = a.rawDate ? new Date(a.rawDate) : parseDate(a.date);
-              const dateB = b.rawDate ? new Date(b.rawDate) : parseDate(b.date);
-              return dateB.getTime() - dateA.getTime();
-            });
+          // Si es un post nuevo, agregarlo
+          if (!prev.some(post => post.id === newPost.id)) {
+            return [...updatedPosts, normalizePost(newPost)]
+              .sort((a, b) => {
+                const dateA = a.rawDate ? new Date(a.rawDate) : parseDate(a.date);
+                const dateB = b.rawDate ? new Date(b.rawDate) : parseDate(b.date);
+                return dateB.getTime() - dateA.getTime();
+              });
+          }
+          return updatedPosts;
         });
       });
       
-      // Suscripción para posts eliminados
-      stompClient.subscribe('/topic/postDeleted', (message) => {
-        const deletedPostId = message.body;
-        setPosts(prev => prev.filter(post => post.id !== deletedPostId));
-      });
-      
-      // Suscripción para actualización de contadores
-      stompClient.subscribe('/topic/commentsCount', (message) => {
-        const { postId, count } = JSON.parse(message.body);
+      // Suscripción específica para actualizaciones de tags
+      stompClient.subscribe('/topic/tagsUpdated', (message) => {
+        const updatedPost = JSON.parse(message.body);
         setPosts(prevPosts => 
           prevPosts.map(post => 
-            post.id === postId ? { ...post, comments: count } : post
+            post.id === updatedPost.id ? normalizePost(updatedPost) : post
           )
         );
       });
     });
-  
+
     return () => {
       if (stompClient.connected) {
         stompClient.disconnect();
@@ -698,20 +694,20 @@ const Posts: React.FC<PostsProps> = ({
                   </h4>
                   {post.tags && post.tags.length > 0 && (
                     <TagsContainer>
-                        {post.tags.map(tag => {
-                            // Buscar el miembro de la familia para obtener los nombres actualizados
-                            const member = familyMembers.find(m => m.id === tag.id);
-                            const displayName = member 
-                                ? `${member.firstName} ${member.lastName}`
-                                : tag.name || 'Usuario desconocido';
-                            
-                            return (
-                                <UserTag key={tag.id}>
-                                    <i className="fi fi-rr-user"></i>
-                                    {displayName}
-                                </UserTag>
-                            );
-                        })}
+                      {post.tags.map(tag => {
+                        // Buscar el miembro de la familia para obtener los nombres actualizados
+                        const member = familyMembers.find(m => m.id === tag.id);
+                        const displayName = member 
+                          ? `${member.firstName} ${member.lastName}`
+                          : tag.name || 'Usuario desconocido';
+                        
+                        return (
+                          <UserTag key={tag.id}>
+                            <i className="fi fi-rr-user"></i>
+                            {displayName}
+                          </UserTag>
+                        );
+                      })}
                     </TagsContainer>
                   )}
                 </PostInfo>

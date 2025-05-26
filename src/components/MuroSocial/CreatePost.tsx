@@ -312,79 +312,95 @@ const CreatePost: React.FC<CreatePostProps> = ({
   };
 
   const filteredMembers = familyMembers.filter(
-    member => `${member.firstName} ${member.lastName}`.toLowerCase()
-      .includes(mentionSearch.toLowerCase()) &&
-    !selectedMentions.find(m => m.id === member.id)
+    member => 
+      member.id !== userId &&
+      `${member.firstName} ${member.lastName}`.toLowerCase()
+        .includes(mentionSearch.toLowerCase()) &&
+      !selectedMentions.find(m => m.id === member.id)
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description) {
-      showAlert({
-        title: 'Campo requerido',
-        message: 'Por favor escribe una descripción',
-        showCancel: false
-      });
-      return;
+  const handleClose = () => {
+    setLocation('');
+    setDescription('');
+    setImage(null);
+    setSelectedMentions([]);
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview.url);
+      setFilePreview(null);
     }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const formData = new FormData();
-      const postData = {
-        description,
-        location,
-        userId,
-        familyId: typeof familyId === 'string' ? familyId : familyId.id,
-        taggedUserIds: selectedMentions.map(member => member.id) 
-      };
-
-      formData.append('post', new Blob([JSON.stringify(postData)], {
-        type: 'application/json'
-      }));
-      
-      if (image) {
-        formData.append('file', image);
-      }
-
-      const response = await axios.post(`${getBackendUrl()}/publications/new`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (!response.data.id) {
-        throw new Error('El servidor no devolvió un ID válido');
-      }
-      
-      setLocation('');
-      setDescription('');
-      setImage(null);
-      if (filePreview) {
-        URL.revokeObjectURL(filePreview.url);
-      }
-      setSelectedMentions([]);
-      
-      onClose();
-  
-    } catch (err) {
-      showAlert({
-        title: 'Error',
-        message: 'Error al crear la publicación. Por favor intenta nuevamente.',
-        showCancel: false
-      });
-      console.error('Error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+    onClose();
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!description) {
+    showAlert({
+      title: 'Campo requerido',
+      message: 'Por favor escribe una descripción',
+      showCancel: false
+    });
+    return;
+  }
+
+  setIsLoading(true);
+  setError('');
+
+  try {
+    const formData = new FormData();
+    const postData = {
+      description,
+      location,
+      userId,
+      familyId: typeof familyId === 'string' ? familyId : familyId.id,
+      taggedUserIds: selectedMentions.map(member => member.id) 
+    };
+
+    formData.append('post', new Blob([JSON.stringify(postData)], {
+      type: 'application/json'
+    }));
+    
+    if (image) {
+      formData.append('file', image);
+    }
+
+    const response = await axios.post(`${getBackendUrl()}/publications/new`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (!response.data.id) {
+      throw new Error('El servidor no devolvió un ID válido');
+    }
+    
+    setLocation('');
+    setDescription('');
+    setImage(null);
+    setSelectedMentions([]);
+    
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview.url);
+      setFilePreview(null);
+    }
+    
+    onClose();
+
+  } catch (err) {
+    showAlert({
+      title: 'Error',
+      message: 'Error al crear la publicación. Por favor intenta nuevamente.',
+      showCancel: false
+    });
+    console.error('Error:', err);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 
   return (
-    <PopupOverlay onClick={onClose}>
+    <PopupOverlay onClick={handleClose}>
       <PopupContent onClick={e => e.stopPropagation()}>
         <h2>Crear nueva publicación</h2>
         {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
@@ -457,20 +473,33 @@ const CreatePost: React.FC<CreatePostProps> = ({
               />
               
               {!isLoadingMembers && (
-                <MentionsDropdown isVisible={showMentions && filteredMembers.length > 0}>
-                  {filteredMembers.map(member => (
-                    <MentionOption
-                      key={member.id}
-                      onClick={() => handleSelectMention(member)}
-                    >
-                      <MentionAvatar>
-                        {member.firstName[0]}{member.lastName[0]}
-                      </MentionAvatar>
-                      <MentionName>
-                        {member.firstName} {member.lastName}
-                      </MentionName>
-                    </MentionOption>
-                  ))}
+                <MentionsDropdown isVisible={showMentions}>
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map(member => (
+                      <MentionOption
+                        key={member.id}
+                        onClick={() => handleSelectMention(member)}
+                      >
+                        <MentionAvatar>
+                          {member.firstName[0]}{member.lastName[0]}
+                        </MentionAvatar>
+                        <MentionName>
+                          {member.firstName} {member.lastName}
+                        </MentionName>
+                      </MentionOption>
+                    ))
+                  ) : (
+                    <div style={{
+                      padding: '10px',
+                      color: '#666',
+                      textAlign: 'center',
+                      fontSize: '14px'
+                    }}>
+                      {familyMembers.length <= 1 
+                        ? "No tienes a nadie para etiquetar" 
+                        : "No se encontraron coincidencias"}
+                    </div>
+                  )}
                 </MentionsDropdown>
               )}
               
