@@ -141,7 +141,7 @@ function validarNombreApellido(nombre) {
 
 // Validar Número de Documento
 function validarNumeroDocumento(numero) {
-  const regex = /^\d{10}$/; // 10 dígitos
+  const regex = /^\d{7,10}$/;
   return regex.test(numero);
 }
 
@@ -379,7 +379,7 @@ async function registrarUsuario() {
     return;
   }
   if (!validarNumeroDocumento(documentNumber)) {
-    showErrorToast('El número de documento debe tener exactamente 10 dígitos.');
+    showErrorToast('El número de documento debe tener entre 7 y 10 dígitos.');
     return;
   }
   if (!validarTelefono(phoneNumber)) {
