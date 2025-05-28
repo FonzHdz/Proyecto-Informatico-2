@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies and run tests (if present)
         run: |
           echo "🧪 Ejecutando pruebas..."
-          mvn clean verify || echo "⚠️ No se encontraron pruebas o fallaron (se ignora para despliegue temprano)"
+          mvn clean test || echo "⚠️ No se encontraron pruebas o fallaron"
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
