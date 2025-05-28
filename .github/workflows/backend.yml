@@ -27,7 +27,7 @@ jobs:
       - name: Run tests
         run: |
           echo "🧪 Ejecutando pruebas..."
-          mvn test"
+          mvn clean test
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
