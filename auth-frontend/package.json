@@ -17,9 +17,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^6.3.4",
-    "jest-environment-jsdom": "^29.7.0",
-    "@babel/core": "^7.23.0",
-    "@babel/preset-env": "^7.23.0"
+    "jest-environment-jsdom": "^29.7.0"
   },
   "engines": {
     "node": ">=20.0.0"
