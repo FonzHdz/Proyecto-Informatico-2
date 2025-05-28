@@ -163,7 +163,7 @@ public class UserController {
                         registeredUser.getEmail(),
                         registeredUser.getFirstName(),
                         familyCode,
-                        "http://localhost:3000/registro?invite=" + familyCode
+                        "https://auth-hc.up.railway.app/registro?invite=" + familyCode
                 );
                 response.put("familyCode", familyCode);
                 response.put("isFamilyCreator", true);
