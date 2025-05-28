@@ -100,8 +100,11 @@ describe('Pruebas de funcionalidad de registro', () => {
 
   test('Debería validar formato de número de documento', () => {
     expect(validarNumeroDocumento('1234567890')).toBe(true);
-    expect(validarNumeroDocumento('123456789')).toBe(false);
+    expect(validarNumeroDocumento('123456789')).toBe(true);
+    expect(validarNumeroDocumento('12345678')).toBe(true);
+    expect(validarNumeroDocumento('1234567')).toBe(true);
     expect(validarNumeroDocumento('12345678901')).toBe(false);
+    expect(validarNumeroDocumento('123456')).toBe(false);
   });
 
   test('Debería validar formato de teléfono', () => {
