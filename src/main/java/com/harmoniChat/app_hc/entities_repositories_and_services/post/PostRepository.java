@@ -22,7 +22,7 @@ public interface PostRepository extends JpaRepository<Post,UUID> {
     List<Post> findByUserIdOrderByCreationDateDesc(@Param("userId") UUID userId);
 
     @EntityGraph(attributePaths = {"taggedUsers"})
-    @Query("SELECT p FROM Post p WHERE p.familyId = :familyId ORDER BY p.creationDate DESC")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.taggedUsers WHERE p.familyId = :familyId ORDER BY p.creationDate DESC")
     List<Post> findByFamilyIdOrderByCreationDateDesc(@Param("familyId") UUID familyId);
 
     @EntityGraph(attributePaths = {"taggedUsers"})

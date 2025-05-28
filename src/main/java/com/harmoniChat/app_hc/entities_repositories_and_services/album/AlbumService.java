@@ -52,6 +52,8 @@ public class AlbumService {
 
     @Transactional
     public void generateAutomaticAlbums(UUID familyId) {
+        createdPostSets.clear();
+
         List<Post> familyPosts = postService.findAllByFamilyId(familyId);
         Map<String, List<Post>> suggestedGroups = albumAnalysisConfig.analyzeAndGroupPosts(familyPosts);
 
@@ -150,9 +152,22 @@ public class AlbumService {
         }
     }
 
-    private boolean isDuplicateGroup(Set<Post> posts) {
-        Set<UUID> ids = posts.stream().map(Post::getId).collect(Collectors.toSet());
-        return createdPostSets.contains(ids);
+    private boolean isDuplicateGroup(UUID familyId, Set<Post> posts) {
+        Set<UUID> postIds = posts.stream().map(Post::getId).collect(Collectors.toSet());
+
+        // 1. Verificar en cache local
+        if (createdPostSets.contains(postIds)) {
+            return true;
+        }
+
+        // 2. Verificar en base de datos (versión mejorada)
+        List<Album> existingAlbums = albumRepository.findByFamilyId(familyId);
+        return existingAlbums.stream().anyMatch(album -> {
+            Set<UUID> albumPostIds = album.getPosts().stream()
+                    .map(Post::getId)
+                    .collect(Collectors.toSet());
+            return albumPostIds.equals(postIds);
+        });
     }
 
     private void createNewAlbum(UUID familyId, String suggestedTitle, List<Post> posts) {
@@ -164,7 +179,7 @@ public class AlbumService {
                 .filter(p -> p.getFilesURL() != null && !p.getFilesURL().isBlank())
                 .collect(Collectors.toSet());
 
-        if (isDuplicateGroup(filteredPosts)) {
+        if (isDuplicateGroup(familyId, filteredPosts)) {
             log.warn("Duplicate post group detected for album '{}', skipping creation", adjustedTitle);
             return;
         }
@@ -238,10 +253,10 @@ public class AlbumService {
 
         String normalizedTitle = title.toLowerCase().trim();
         return posts.stream()
+                .filter(post -> post.getLocation() != null)
                 .filter(post -> {
-                    if (post.getLocation() == null) return false;
                     String loc = post.getLocation().split(",")[0].trim().toLowerCase();
-                    return normalizedTitle.equals(loc);
+                    return loc.equals(lowerTitle);
                 })
                 .collect(Collectors.toSet());
     }
@@ -457,9 +472,14 @@ public class AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new RuntimeException("Álbum no encontrado"));
 
+        // Limpiar este grupo del cache
+        Set<UUID> postIds = album.getPosts().stream()
+                .map(Post::getId)
+                .collect(Collectors.toSet());
+        createdPostSets.remove(postIds);
+
         album.getPosts().clear();
         albumRepository.save(album);
-
         albumRepository.delete(album);
     }
 
