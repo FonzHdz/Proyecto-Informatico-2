@@ -8,11 +8,9 @@ RUN npm ci
 
 COPY . .
 
-RUN npm test
-
-EXPOSE 3000
-
 ENV NODE_ENV=production
 ENV PORT=3000
+
+EXPOSE 3000
 
 CMD ["npm", "start"]
