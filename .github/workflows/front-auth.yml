@@ -21,18 +21,16 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run tests (if any)
-        run: |
-          if [ -f "package.json" ] && grep -q '"test"' package.json; then
-            npm test || echo "Tests failed or not implemented"
-          else
-            echo "No tests found"
-          fi
+      - name: Run tests
+        run: npm test
+        env:
+          CI: true
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
