@@ -37,11 +37,6 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Login to Railway
-        run: railway login
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
-
       - name: Deploy front-app to Railway
         run: |
           echo "Iniciando despliegue en Railway..."
