@@ -184,6 +184,7 @@ function updateRulesDisplay(password) {
   const colorBad = "text-gray-600";
 
   function updateRule(el, valid, text) {
+    if (!el) return;
     el.textContent = `${valid ? '✔️' : '❌'} ${text}`;
     el.classList.remove(colorOk, colorBad);
     el.classList.add(valid ? colorOk : colorBad);
@@ -197,6 +198,8 @@ function updateRulesDisplay(password) {
 }
 
 function checkPasswordsMatch() {
+  if (!passwordInput || !confirmPasswordInput || !matchMessage) return;
+  
   const pwd = passwordInput.value;
   const confirm = confirmPasswordInput.value;
 
@@ -216,18 +219,22 @@ function checkPasswordsMatch() {
   }
 }
 
-passwordInput.addEventListener("input", () => {
-  const pwd = passwordInput.value;
-  if (pwd.length > 0) {
-    passwordRules.classList.remove("hidden");
-    updateRulesDisplay(pwd);
-  } else {
-    passwordRules.classList.add("hidden");
-  }
-  checkPasswordsMatch();
-});
+function setupPasswordValidation() {
+  if (!passwordInput || !confirmPasswordInput || !passwordRules || !matchMessage) return;
 
-confirmPasswordInput.addEventListener("input", checkPasswordsMatch);
+  passwordInput.addEventListener("input", () => {
+    const pwd = passwordInput.value;
+    if (pwd.length > 0) {
+      passwordRules.classList.remove("hidden");
+      updateRulesDisplay(pwd);
+    } else {
+      passwordRules.classList.add("hidden");
+    }
+    checkPasswordsMatch();
+  });
+
+  confirmPasswordInput.addEventListener("input", checkPasswordsMatch);
+}
 
 // Validar Contraseña
 function validarContraseña(password) {
@@ -494,6 +501,7 @@ window.onload = function () {
   loadRoleOptions();
   handleInviteCodeFromUrl();
   setupPoliciesModal();
+  setupPasswordValidation();
 
   // Si hay código en URL, forzar selección de hijo/hija
   if (getQueryParam('invite')) {
@@ -512,6 +520,7 @@ if (typeof module !== 'undefined') {
     validarContraseña,
     handleInviteCodeFromUrl,
     validarContraseñas,
-    setupPoliciesModal
+    setupPoliciesModal,
+    setupPasswordValidation
   };
 }
