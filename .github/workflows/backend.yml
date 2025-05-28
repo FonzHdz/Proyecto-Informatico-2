@@ -19,10 +19,15 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Install dependencies and run tests (if present)
+      - name: Install dependencies
+        run: |
+          echo "📦 Instalando dependencias..."
+          mvn clean install -DskipTests
+
+      - name: Run tests
         run: |
           echo "🧪 Ejecutando pruebas..."
-          mvn clean test || echo "⚠️ No se encontraron pruebas o fallaron"
+          mvn test"
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
