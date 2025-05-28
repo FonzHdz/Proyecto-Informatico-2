@@ -107,29 +107,34 @@ function setupLoginForm() {
   if (loginForm) {
     loginForm.addEventListener('submit', async function(e) {
       e.preventDefault();
+      console.log('Iniciando proceso de login...');
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       if (!email || !password) {
-        window.Swal.fire({
+        Swal.fire({
           icon: 'error',
           title: 'Por favor completa todos los campos'
         });
         return;
       }
 
-      let loader;
       try {
-        loader = await window.Swal.fire({
+        console.log('Verificando SweetAlert2:', typeof Swal);
+        console.log('Mostrando loader...');
+        
+        // Mostrar el loader de forma más simple
+        Swal.fire({
           title: 'Iniciando sesión',
-          html: 'Validando tus credenciales...',
+          text: 'Validando tus credenciales...',
           allowOutsideClick: false,
+          showConfirmButton: false,
           didOpen: () => {
-            window.Swal.showLoading();
-          },
-          background: '#f8fafc',
-          backdrop: 'rgba(0,0,0,0.4)'
+            console.log('Loader abierto');
+            Swal.showLoading();
+          }
         });
 
+        console.log('Intentando conectar con el backend:', `${BACKEND_URL}/user/login`);
         const response = await fetch(`${BACKEND_URL}/user/login`, {
           method: 'POST',
           headers: {
@@ -140,49 +145,52 @@ function setupLoginForm() {
             password: password
           })
         });
+        console.log('Respuesta recibida:', response.status);
         const data = await response.json();
+        console.log('Datos recibidos:', data);
         
         if (!response.ok) {
-          await window.Swal.close();
-          window.Swal.fire({
+          console.log('Error en la respuesta:', data);
+          await Swal.close();
+          Swal.fire({
             icon: 'error',
             title: data.message || 'Credenciales incorrectas'
           });
           return;
         }
 
-        await window.Swal.close();
+        console.log('Login exitoso, cerrando loader...');
+        await Swal.close();
+        
         const gender = data.user.gender;
+        let welcomeMessage = '¡Bienvenido a HarmoniChat!';
         if (gender === 'Masculino') {
-          window.Swal.fire({
-            icon: 'success',
-            title: `¡Bienvenido ${data.user.firstName}!`
-          });
+          welcomeMessage = `¡Bienvenido ${data.user.firstName}!`;
         } else if (gender === 'Femenino') {
-          window.Swal.fire({
-            icon: 'success',
-            title: `¡Bienvenida ${data.user.firstName}!`
-          });
-        } else {
-          window.Swal.fire({
-            icon: 'success',
-            title: '¡Bienvenido a HarmoniChat!'
-          });
+          welcomeMessage = `¡Bienvenida ${data.user.firstName}!`;
         }
 
+        console.log('Mostrando mensaje de bienvenida...');
+        await Swal.fire({
+          icon: 'success',
+          title: welcomeMessage,
+          timer: 1500,
+          showConfirmButton: false
+        });
+
+        console.log('Guardando datos del usuario...');
         localStorage.setItem('harmonichat_user', JSON.stringify(data.user));
         const userData = encodeURIComponent(JSON.stringify(data.user));
-        setTimeout(() => {
-          window.location.href = `${APP_URL}/?user=${userData}`;
-        }, 1500);
+        
+        console.log('Redirigiendo a la aplicación...');
+        window.location.href = `${APP_URL}/?user=${userData}`;
       } catch (error) {
-        if (loader) {
-          await window.Swal.close();
-        }
-        console.error('Error:', error);
-        window.Swal.fire({
+        console.error('Error detallado:', error);
+        await Swal.close();
+        Swal.fire({
           icon: 'error',
-          title: 'Error al conectar con el servidor'
+          title: 'Error al conectar con el servidor',
+          text: error.message
         });
       }
     });
@@ -218,7 +226,7 @@ window.onload = function() {
     const message = urlParams.get('message');
     
     if (message) {
-        window.Swal.fire({
+        Swal.fire({
             icon: 'info',
             title: decodeURIComponent(message)
         });
