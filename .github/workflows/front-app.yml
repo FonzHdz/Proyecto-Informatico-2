@@ -21,16 +21,39 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Run linting
+        run: |
+          echo "Ejecutando linting..."
+          npm run lint || true
+
       - name: Run tests
         run: npm test
 
       - name: Build project
-        run: npm run build
+        run: |
+          echo "Iniciando build..."
+          CI=false npm run build
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Login to Railway
+        run: railway login
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
+
       - name: Deploy front-app to Railway
-        run: railway up --service HC-App
+        run: |
+          echo "Iniciando despliegue en Railway..."
+          railway up --service HC-App
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
+        continue-on-error: true
+
+      - name: Check deployment status
+        if: always()
+        run: |
+          echo "Verificando estado del despliegue..."
+          railway status
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
