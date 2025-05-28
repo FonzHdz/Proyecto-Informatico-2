@@ -45,7 +45,7 @@ const ImageContainer = styled.div`
 const CloseButton = styled.button`
   position: absolute;
   top: -40px;
-  right: 0;
+  right: 15px;
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;

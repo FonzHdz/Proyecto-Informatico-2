@@ -345,7 +345,6 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Permite solo números y algunos caracteres especiales comunes en números de teléfono
     if (/^[0-9+\-\s]*$/.test(value)) {
       setEditedUser({ ...editedUser, phoneNumber: value });
       setPhoneError('');
@@ -355,7 +354,6 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
   };
 
   const validatePhone = (phone: string) => {
-    // Validación básica: al menos 7 dígitos, máximo 15
     const digitsOnly = phone.replace(/\D/g, '');
     if (digitsOnly.length < 7) {
       return 'El número debe tener al menos 7 dígitos';
@@ -486,19 +484,30 @@ const Profile: React.FC<{ user: User; setUser: (user: User) => void }> = ({ user
         <FamilySection>
           <SectionTitle>Miembros de la Familia</SectionTitle>
           <FamilyMembersList>
-          {familyMembers
-            .filter(member => member.id !== user.id) // Filtra para excluir al usuario actual
-            .map((member) => (
-              <FamilyMemberCard key={member.id}>
-                <MemberAvatar>{member.firstName[0]}</MemberAvatar>
-                <MemberInfo>
-                  <MemberName>{`${member.firstName} ${member.lastName}`}</MemberName>
-                  <MemberRole>{member.role}</MemberRole>
-                </MemberInfo>
-              </FamilyMemberCard>
-            ))}
-        </FamilyMembersList>
-        </FamilySection>
+            {familyMembers.filter(member => member.id !== user.id).length > 0 ? (
+              familyMembers
+                .filter(member => member.id !== user.id)
+                .map((member) => (
+                  <FamilyMemberCard key={member.id}>
+                    <MemberAvatar>{member.firstName[0]}</MemberAvatar>
+                    <MemberInfo>
+                      <MemberName>{`${member.firstName} ${member.lastName}`}</MemberName>
+                      <MemberRole>{member.role}</MemberRole>
+                    </MemberInfo>
+                  </FamilyMemberCard>
+                ))
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '20px',
+                color: '#7f8c8d',
+                fontSize: '14px'
+              }}>
+                ¡Invita a tu familia!
+              </div>
+            )}
+          </FamilyMembersList>
+      </FamilySection>
       </ProfileLayout>
     </Header>
   );

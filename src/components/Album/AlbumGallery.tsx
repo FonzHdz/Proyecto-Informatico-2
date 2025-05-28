@@ -355,18 +355,34 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
   const handleGenerateAlbums = async () => {
     try {
       setLoading(true);
-      await axios.post(`${getBackendUrl()}/albums/generate/${familyId}`);
-      showAlert({
-        title: 'Éxito',
-        message: 'Álbumes generados automáticamente',
-        showCancel: false
-      });
-      await fetchAlbums();
+      const initialAlbumCount = albums.length;
+      
+      const response = await axios.post(`${getBackendUrl()}/albums/generate/${familyId}`);
+      
+      const updatedResponse = await axios.get(`${getBackendUrl()}/albums/family/${familyId}`);
+      const updatedAlbums = updatedResponse.data;
+      setAlbums(updatedAlbums);
+      
+      const newAlbumsCount = updatedAlbums.length - initialAlbumCount;
+      
+      if (newAlbumsCount > 0) {
+        showAlert({
+          title: 'Éxito',
+          message: `Se crearon ${newAlbumsCount} ${newAlbumsCount === 1 ? 'álbum nuevo' : 'álbumes nuevos'}`,
+          showCancel: false
+        });
+      } else {
+        showAlert({
+          title: 'Información',
+          message: 'No se crearon nuevos álbumes. No hay suficientes fotos para generar un nuevo álbum.',
+          showCancel: false
+        });
+      }
     } catch (error) {
       console.error('Error generating albums:', error);
       showAlert({
         title: 'Error',
-        message: 'Error al generar álbumes',
+        message: 'Error al generar álbumes automáticos',
         showCancel: false
       });
     } finally {
@@ -463,7 +479,6 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
     return user.role === 'Madre' || user.role === 'Padre' || album.userId === user.id;
   };
 
-  // Render
   return (
     <>
       <Header>Álbum familiar</Header>
@@ -497,7 +512,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
 
       <FloatingActions>
         <FloatingButton onClick={handleGenerateAlbums} title="Generar Álbumes Automáticos">
-          <i className="fi fi-rr-refresh"></i>
+          <i className="fi fi-rr-artificial-intelligence"></i>
         </FloatingButton>
         <FloatingButton 
           onClick={() => setShowCreateModal(true)} 
@@ -521,7 +536,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
                 placeholder="Ej: Vacaciones en la playa 2023"
               />
             </FormGroup>
-
+{/* 
             <FormGroup>
               <Label>Descripción</Label>
               <TextArea
@@ -529,7 +544,7 @@ const AlbumGallery: React.FC<AlbumGalleryProps> = ({ user, setActiveSection, set
                 onChange={(e) => setNewAlbumData({...newAlbumData, description: e.target.value})}
                 placeholder="Añade una descripción para este álbum..."
               />
-            </FormGroup>
+            </FormGroup> */}
 
             <FormGroup>
               <Label>Tipo de álbum</Label>

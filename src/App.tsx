@@ -222,7 +222,9 @@ interface User {
 
 function App() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('chat');
+  const [activeSection, setActiveSection] = useState(() => {
+    return localStorage.getItem('activeSection') || 'chat';
+  });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -375,12 +377,14 @@ function App() {
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
+    localStorage.setItem('activeSection', section);
   };
 
-  const handleLogout = () => {
+ const handleLogout = () => {
     localStorage.removeItem('harmonichat_user');
     localStorage.removeItem('harmoniBotChatHistory');
     localStorage.removeItem('pendingChatBotMessages');
+    localStorage.removeItem('activeSection');
     
     setCurrentUser(null);
     window.location.href = getAuthUrl();
@@ -475,16 +479,16 @@ function App() {
                   <i className="fi fi-rr-grin"></i>
                 </SidebarIcon>
                 <SidebarIcon 
-                  active={activeSection === 'album'} 
-                  onClick={() => handleSectionChange('album')}
-                >
-                  <i className="fi fi-rr-grid"></i>
-                </SidebarIcon>
-                <SidebarIcon 
                   active={activeSection === 'posts'} 
                   onClick={() => handleSectionChange('posts')}
                 >
                   <i className="fi fi-rr-camera"></i>
+                </SidebarIcon>
+                <SidebarIcon 
+                  active={activeSection === 'album'} 
+                  onClick={() => handleSectionChange('album')}
+                >
+                  <i className="fi fi-rr-grid"></i>
                 </SidebarIcon>
                 <SidebarIcon 
                   active={activeSection === 'chatbot'} 
@@ -511,7 +515,8 @@ function App() {
         <Header>
           {currentUser ? (
             <>
-              {activeSection === 'diary' ? 'Diario de emociones' : 
+              {activeSection === 'diary' ? 'Diario de emociones' :
+              activeSection === 'albumDetail' ? 'Álbum' : 
                activeSection === 'chatbot' ? 'HarmoniBot': 
                activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
               <span style={{ float: 'right', fontSize: '16px' }}>
