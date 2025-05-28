@@ -37,18 +37,19 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy front-app to Railway
+      - name: Deploy to Railway
         run: |
           echo "Iniciando despliegue en Railway..."
-          railway up --service HC-App
+          railway up --service HC-App --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
         continue-on-error: true
 
-      - name: Check deployment status
+      - name: Wait for deployment
         if: always()
         run: |
-          echo "Verificando estado del despliegue..."
+          echo "Esperando a que el despliegue se complete..."
+          sleep 30
           railway status
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_APP }}
