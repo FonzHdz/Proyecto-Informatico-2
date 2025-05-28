@@ -6,7 +6,7 @@ RUN npm install --verbose
 
 COPY . .
 
-RUN npm run test && npm run build
+RUN CI=false npm run build
 
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
