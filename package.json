@@ -30,8 +30,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
-    "test": "react-scripts test",
+    "build": "npm run test && CI=false react-scripts build",
+    "test": "react-scripts test --watchAll=false",
+    "test:watch": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -53,8 +54,13 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.27.3",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
     "@types/react-places-autocomplete": "^7.2.14",
     "@types/sockjs-client": "^1.5.4",
-    "@types/stompjs": "^2.3.9"
+    "@types/stompjs": "^2.3.9",
+    "babel-jest": "^30.0.0-beta.3"
   }
 }
