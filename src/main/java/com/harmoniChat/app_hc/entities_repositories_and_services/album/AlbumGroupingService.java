@@ -182,7 +182,7 @@ public class AlbumGroupingService {
                                             .filter(postTags::contains)
                                             .count();
                                     double matchRatio = (double) matchCount / album.getTags().size();
-                                    return matchRatio >= 0.6;
+                                    return matchRatio >= 0.4;
                                 })                                .map(Map.Entry::getKey)
                                 .collect(Collectors.toList());
 
