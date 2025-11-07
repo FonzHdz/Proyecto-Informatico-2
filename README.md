@@ -151,7 +151,7 @@ Este proyecto incluye un flujo de trabajo de integración y despliegue continuo 
 - Validación de código (`lint`)
 - Pruebas automatizadas (`jest`)
 - Build de producción (`npm run build`)
-- (Opcional) Deploy automático con Docker o Vercel/Netlify
+- Deploy automático con Docker
 
 ---
 
