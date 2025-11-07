@@ -1,7 +1,7 @@
 # 👨‍👩‍👧‍👦 HarmoniChat - Red Social Familiar
 
 <div align="center">
-  <img src="main/Logo%20HarmoniChat.png" alt="HarmoniChat Logo" width="180"/>
+  <img src="Logo%20HarmoniChat.png" alt="HarmoniChat Logo" width="180"/>
   <br /><br />
 
   [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react)](https://reactjs.org/)
