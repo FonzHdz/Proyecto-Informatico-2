@@ -1,14 +1,12 @@
 # 👨‍👩‍👧‍👦 HarmoniChat - Red Social Familiar
 
 <div align="center">
-  <img src="public/logo192.png" alt="HarmoniChat Logo" width="180"/>
-
+  <img src="main/Logo%20HarmoniChat.png" alt="HarmoniChat Logo" width="180"/>
   <br /><br />
 
   [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react)](https://reactjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
   [![Styled Components](https://img.shields.io/badge/Styled--Components-6.1.8-DB7093?logo=styled-components)](https://styled-components.com/)
-  [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
 ---
@@ -25,10 +23,8 @@
 
 - 👤 **Perfiles familiares personalizados**
 - 🖼️ **Galería para compartir momentos en fotos**
-- 🗓️ **Calendario familiar con gestión de eventos**
 - 💬 **Chat en tiempo real vía WebSockets**
-- 📲 **Diseño 100% responsive para móviles y tablets**
-- 🔐 **Sistema de autenticación robusto y seguro**
+- 🔐 **Sistema de autenticación seguro**
 - 👪 **Gestión de grupos y miembros familiares**
 - 🛠️ **Pipeline de integración continua con validación automática**
 
@@ -159,36 +155,13 @@ Este proyecto incluye un flujo de trabajo de integración y despliegue continuo 
 
 ---
 
-## 🤝 Contribuciones
-
-¡Las contribuciones son bienvenidas!
-
-1. Haz un fork del repositorio
-2. Crea una rama con tu funcionalidad (`git checkout -b feature/NuevaFeature`)
-3. Realiza tus cambios y commits
-4. Envía un pull request
-
-Consulta la [Guía de Contribución](CONTRIBUTING.md) si aplica.
-
----
-
-## 📄 Licencia
-
-Distribuido bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más información.
-
----
-
 ## 👥 Autores
 
-- ✍️ Tu Nombre - [@tu-usuario](https://github.com/tu-usuario)
-
----
-
-## 🙏 Agradecimientos
-
-- A la comunidad de React, TypeScript y Open Source por sus herramientas.
-- A todas las familias que ayudaron con sus sugerencias y pruebas.
-- A ti, por interesarte en este proyecto ❤️
+- Natalia Cajiao Castillo - [@natalia4566](https://github.com/natalia4566)
+- Alfonso Miguel Hernánez - [@FonzHdz](https://github.com/FonzHdz)
+- Ricardo Stiven Hernández - [@Stivenhdez2308](https://github.com/Stivenhdez2308)
+- Esteban Marini Viteri - [@EstebanMaVi](https://github.com/EstebanMaVi)
+- Juan Sebastian Valderrama - [@Xunni1e](https://github.com/Xunni1e)
 
 ---
 
